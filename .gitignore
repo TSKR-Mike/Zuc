@@ -1,0 +1,9 @@
+./build/**
+./cmake-build-debug/**
+./idea/**
+build/**
+./.cmake/**
+./CMakeFiles/**
+./build_gcc
+test_cross_plantform.bat
+NUL.obj
