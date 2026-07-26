@@ -15,18 +15,6 @@ zuc is a modern, header-only C++ library that provides fast, intuitive utilities
 - **Type-Safe Operations** - Strong type checking using C++20 concepts
 - **Well-Documented** - Extensive documentation with examples for all APIs
 
-## 🚀 Core Principles
-- **Zero-Overhead Philosophy** - Designed for maximum performance with minimal runtime cost
-- **Zero-Allocation Views** - Non-allocating string operations using `std::string_view`
-- **Modern C++20** - Leverages latest C++ features for clean, efficient code
-- **Noexcept Safety** - Functions are `noexcept` where no dynamic allocation occurs
-- **Header-Only** - Easy integration, no build dependencies
-- **More Convenient than stdio** - RAII, exceptions, and type-safe formatting
-- **At Almost No Cost** - Use inline widely, no costs for function calling
-- **Comprehensive Time Support** - Easy-to-use timing, date manipulation, and benchmarking tools
-- **Type Safety** - Extensive use of C++20 concepts for compile-time type checking
-- **Bug-Free Design** - Comprehensive bounds checking and error handling
-
 ## 📦 What's Inside
 
 ### String Utilities (`string_kits.hpp`)
@@ -49,7 +37,6 @@ zuc is a modern, header-only C++ library that provides fast, intuitive utilities
 - **Console I/O** - Formatted console output and input functions
 - **Line Reading** - Efficient line-by-line file reading with error handling
 - **Exception Safety** - Custom exceptions for file and I/O operations
-- **Modern iostream** - Built on standard C++ iostream with time support
 - **Convenient API** - Simple, intuitive functions that make I/O operations effortless
 
 ### Time Utilities (`time_kits.hpp`)
@@ -58,7 +45,6 @@ zuc is a modern, header-only C++ library that provides fast, intuitive utilities
 - **Function Benchmarking** - Simple function timing with detailed statistics
 - **Time Formatting** - Built-in time string formatting with various precision levels
 - **Sleep Functions** - Convenient thread sleeping with duration support
-- **Convenient API** - Intuitive time operations that handle complexity for you
 
 ## 🛠️ Quick Start
 
@@ -323,8 +309,7 @@ file.write("Processing complete at: {}\n", get_today_time_detailed_str());
 
 - **C++20** compatible compiler (GCC 13+, Clang 19+, MSVC 2022+)
 - Standard library implementation with C++20 support
-- For time zone support (DateTime class): Full C++20 chrono implementation
-  - Note: Clang 19 has incomplete chrono support - define `ZUC_DROP_CHRONO_TIME_ZONE` to use time utilities without DateTime class
+- For DateTime class: Full C++20 chrono implementation (define `ZUC_DROP_CHRONO_TIME_ZONE` if unavailable)
 
 ## 🧪 Testing
 
@@ -352,7 +337,7 @@ Contributions are welcome! Please ensure:
 - Documentation is updated for any API changes
 - C++20 best practices are followed
 
-## 🎯 Design Philosophy - Convenience First
+## 🎯 Design Philosophy
 
 zuc is built with one primary goal: **making C++ development more convenient**. Every feature is designed to:
 
@@ -361,6 +346,7 @@ zuc is built with one primary goal: **making C++ development more convenient**. 
 - **Provide safety** - RAII, exceptions, and type-safety built-in
 - **Stay modern** - Leverage C++20 features for cleaner code
 - **Remain intuitive** - APIs that work the way you'd expect
+- **Ensure correctness** - Comprehensive bounds checking and error handling
 
 Whether you're manipulating strings, handling files, or working with time, zuc provides the most convenient interface possible.
 
@@ -383,19 +369,6 @@ Tested and verified on:
 - **Windows** - Primary development platform
 - **Linux** - Full support
 - **macOS** - Should work (community testing appreciated)
-
-## 🎯 Design Philosophy - Convenience First
-
-zuc is built with one primary goal: **making C++ development more convenient**. Every feature is designed to:
-
-- **Reduce boilerplate** - Less code, more functionality
-- **Handle complexity** - Let the library manage the details
-- **Provide safety** - RAII, exceptions, and type-safety built-in
-- **Stay modern** - Leverage C++20 features for cleaner code
-- **Remain intuitive** - APIs that work the way you'd expect
-- **Ensure correctness** - Comprehensive bounds checking and error handling
-
-Whether you're manipulating strings, handling files, or working with time, zuc provides the most convenient interface possible.
 
 ## 📚 API Reference
 

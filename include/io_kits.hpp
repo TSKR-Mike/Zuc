@@ -1,11 +1,8 @@
 /**
- * @file io.hpp
- * @author {TSKR-Mike-CYX@github.com}
- * @brief A simple file aiming to simplify io operations
+ * @file io_kits.hpp
+ * @brief I/O utilities for C++20
  * @date 2026-07-06
- *
  * @copyright Copyright (c) 2026
- *
  */
 #pragma once
 
@@ -24,6 +21,7 @@
 
 #include "common_concepts.hpp"
 #include "string_kits.hpp"
+#include "container_kits.hpp"
 
 #define _CRT_SECURE_NO_WARNINGS  // To ignore fopen warnings on windows
 
@@ -34,9 +32,7 @@ namespace zuc {
 /**
  * @class FileException
  * @brief Exception thrown for file-related errors
- * 
- * Used when file operations fail due to opening, reading, or writing issues.
- * Inherits from std::runtime_error for standard exception handling.
+ * @note Used when file operations fail due to opening, reading, or writing issues
  */
 class FileException : public std::runtime_error {
    public:
@@ -47,8 +43,6 @@ class FileException : public std::runtime_error {
 /**
  * @class ReadLineException
  * @brief Exception thrown when line reading operations fail
- * 
- * Used specifically for errors during line-by-line reading operations.
  */
 class ReadLineException : public std::runtime_error {
    public:
@@ -59,8 +53,6 @@ class ReadLineException : public std::runtime_error {
 /**
  * @class WriteLineException
  * @brief Exception thrown when line writing operations fail
- * 
- * Used specifically for errors during line writing operations.
  */
 class WriteLineException : public std::runtime_error {
    public:
@@ -70,7 +62,6 @@ class WriteLineException : public std::runtime_error {
 /**
  * @enum ReadLineStatus
  * @brief Status codes for line reading operations
- * 
  * @var EndOfFile Successfully reached end of file
  * @var Failed     An error occurred during reading
  * @var Success    Successfully read a line
@@ -82,17 +73,8 @@ enum class ReadLineStatus { EndOfFile, Failed, Success };
 /**
  * @class FileMgr
  * @brief RAII wrapper for file I/O operations with automatic resource management
- * 
- * Provides a safe, exception-friendly interface for file operations including:
- * - Automatic file closing on destruction
- * - Move semantics for efficient resource transfer
- * - Formatted writing support
- * - Line-by-line reading with status tracking
- * - Read/write pointer management
- * 
- * @note Copy operations are disabled to prevent multiple handles to the same file.
- *       Use move semantics instead for transferring ownership.
- * 
+ * @note Provides automatic file closing, move semantics, formatted writing, line-by-line reading, and pointer management
+ * @note Copy operations are disabled; use move semantics for transferring ownership
  * @example
  * try {
  *     FileMgr file("data.txt", std::ios::out);
@@ -175,17 +157,18 @@ class FileMgr {
 
     /**
      * @brief Destructor - automatically closes the file
-     * 
-     * Ensures proper resource cleanup even if exceptions occur.
-     * Swallows exceptions to prevent std::terminate during stack unwinding.
+     * @note Ensures proper resource cleanup even if exceptions occur
      */
     ~FileMgr() {
-        try {
-            close();
-        } catch (const FileException&) {
-            // Ignore (no logging here to keep header clean)
+    try {
+        if (file_.is_open()) {
+            file_.flush();  // Ensure all data is written
+            file_.close();  // Close the file
         }
+    } catch (...) {
+        // Ignore exceptions in destructor
     }
+}
 
     // Copy operations disabled - files cannot be safely copied
     FileMgr(const FileMgr&) = delete;
@@ -194,8 +177,7 @@ class FileMgr {
     /**
      * @brief Move constructor - transfers ownership of file handle
      * @param f FileMgr to move from
-     * 
-     * The source object is left in a valid but empty state.
+     * @note The source object is left in a valid but empty state
      */
     FileMgr(FileMgr&& f) noexcept {
         file_ = std::move(f.file_);
@@ -212,8 +194,7 @@ class FileMgr {
      * @brief Move assignment operator - transfers ownership of file handle
      * @param f FileMgr to move from
      * @return Reference to this FileMgr
-     * 
-     * Closes current file before taking ownership of the source file.
+     * @note Closes current file before taking ownership of the source file
      */
     FileMgr& operator=(FileMgr&& f) noexcept {
         close();
@@ -238,8 +219,7 @@ class FileMgr {
 
     /**
      * @brief Close the file if it's open
-     * 
-     * Safe to call multiple times. Subsequent calls have no effect.
+     * @note Safe to call multiple times. Subsequent calls have no effect
      */
     void close() {
         if (file_opened_successfully_) {
@@ -252,9 +232,7 @@ class FileMgr {
      * @brief Read all lines from the file into a vector
      * @return Vector of strings containing each line
      * @throws FileException if file is not open or reading fails
-     * 
-     * Resets read pointer to beginning before reading.
-     * Handles both Unix (\n) and Windows (\r\n) line endings.
+     * @note Resets read pointer to beginning before reading. Handles both Unix (\n) and Windows (\r\n) line endings
      */
     std::vector<std::string> read_all() {
         if (!is_valid()) {
@@ -282,12 +260,8 @@ class FileMgr {
     /**
      * @brief Read a single line from the file
      * @return Pair containing status and optional line content
-     * 
-     * Returns {Success, line} on successful read
-     * Returns {EndOfFile, nullopt} when end of file is reached
-     * Returns {Failed, nullopt} on read error
-     * 
-     * Handles Windows line endings (\r\n) by removing trailing \r.
+     * @note Returns {Success, line} on successful read, {EndOfFile, nullopt} when end of file is reached, {Failed, nullopt} on read error
+     * @note Handles Windows line endings (\r\n) by removing trailing \r
      */
     std::pair<ReadLineStatus, std::optional<std::string>> read_a_line() {
         if (!is_valid()) {
@@ -317,8 +291,7 @@ class FileMgr {
      * @brief Write stringable content to file
      * @param content Content to write (must satisfy Stringable concept)
      * @throws FileException if file is not open
-     * 
-     * Automatically flushes after writing to ensure data is written.
+     * @note Automatically flushes after writing to ensure data is written
      */
     void write(const Stringable auto& content) {
         if (!is_valid()) {
@@ -332,8 +305,7 @@ class FileMgr {
     /**
      * @brief Write multiple items to file, one per line
      * @param all_content Span of stringable items to write
-     * 
-     * Each item is written on its own line.
+     * @note Each item is written on its own line
      */
     template <Stringable T>
     void write_all(std::span<T> all_content) {
@@ -351,8 +323,7 @@ class FileMgr {
      * @param fmt Format string
      * @param args Arguments to format
      * @throws FileException if file is not open or formatting fails
-     * 
-     * Uses C++20 std::format for type-safe, flexible formatting.
+     * @note Uses C++20 std::format for type-safe, flexible formatting
      */
     template <typename... Args>
     void write(const std::format_string<Args...> fmt, Args&&... args) {
@@ -404,10 +375,7 @@ class FileMgr {
     /**
      * @brief Get reference to underlying fstream
      * @return Reference to the internal std::fstream
-     * 
-     * @warning FOR DEBUG ONLY, UNLESS YOU KNOW WHAT YOU ARE DOING
-     *          USE READ/WRITE FUNCTIONS INSTEAD
-     *          DO NOT CLOSE THE STREAM RETURNED! THIS MAY LEAD TO SERIOUS ERRORS.
+     * @warning FOR DEBUG ONLY. DO NOT CLOSE THE STREAM RETURNED! THIS MAY LEAD TO SERIOUS ERRORS
      */
     std::fstream& get_stream() {
         return file_;
@@ -419,12 +387,12 @@ class FileMgr {
 // ---- Console I/O functions ----
 
 /**
- * @brief Write formatted string to console
- * @param fmt Format string
+ * @brief Write formatted content to console
+ * @tparam Args Variadic template for format arguments
+ * @param fmt Format string using std::format syntax
  * @param args Arguments to format
  * @throws WriteLineException if formatting fails
- * 
- * Uses std::format for type-safe, flexible console output.
+ * @note Writes formatted output to stdout using C++20 std::format
  */
 template <typename... Args>
 inline void write_string_to_console(std::format_string<Args...> fmt,
@@ -448,9 +416,11 @@ inline void write_string_to_console(const std::string& s) {
 }
 
 /**
- * @brief Write formatted line to console (with newline)
- * @param fmt_str Format string
+ * @brief Write formatted content to console followed by newline
+ * @tparam Args Variadic template for format arguments
+ * @param fmt_str Format string using std::format syntax
  * @param args Arguments to format
+ * @note Writes formatted output to stdout with automatic newline termination
  */
 template <typename... Args>
 inline void write_a_line_to_console(const std::format_string<Args...>& fmt_str,
@@ -468,11 +438,14 @@ inline void write_a_line_to_console(const std::string& line) {
     write_string_to_console("\n");
 }
 
-// Read a line from console with a formatted prompt.
-// Uses std::getline for dynamic length. Returns empty string on EOF or error.
-// @param prompt_fmt_str Format string for the prompt
-// @param prompt_args Arguments for the format string
-// @return The line read from console, or empty string on EOF/error
+/**
+ * @brief Read a line from console with optional prompt
+ * @tparam Args Variadic template for prompt arguments
+ * @param prompt_fmt_str Format string for the prompt
+ * @param prompt_args Arguments for the prompt format string
+ * @return String containing the user's input (without trailing newline)
+ * @note Displays a formatted prompt and reads user input from stdin. Handles Windows line endings (\r\n) by removing the trailing \r
+ */
 template <typename... Args>
 inline std::string read_a_line_from_console(
     std::format_string<Args...> prompt_fmt_str, Args&&... prompt_args) {
@@ -504,9 +477,7 @@ inline std::string read_a_line_from_console(
  * @brief Open file with error handling
  * @param path Path to the file
  * @return Optional FileMgr, or nullopt if opening fails
- * 
- * Provides a non-throwing alternative to FileMgr constructor.
- * Errors are printed to console instead of being thrown.
+ * @note Provides a non-throwing alternative to FileMgr constructor. Errors are printed to console instead of being thrown
  */
 inline std::optional<FileMgr> open_file(const std::string& path) {
     try {

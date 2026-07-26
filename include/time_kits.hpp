@@ -105,6 +105,7 @@ class Stopwatch {
         if (running_) {
             accumulated_time_ += steady_clock::now() - start_time_;
             running_ = false;
+            paused_ = true;
         }
     }
 
@@ -112,12 +113,14 @@ class Stopwatch {
         if (!running_) {
             start_time_ = steady_clock::now();
             running_ = true;
+            paused_ = false;
         }
     }
 
     void reset() {
         accumulated_time_ = duration<double>(0);
         running_ = false;
+        paused_ = false;
     }
 
     void stop() {
@@ -132,14 +135,14 @@ class Stopwatch {
     }
 
     bool is_running() const { return running_; }
-    bool is_paused() const { return !running_ && accumulated_time_.count() > 0; }
+    bool is_paused() const { return paused_; }
 
    private:
     time_point<steady_clock> start_time_;
     duration<double> accumulated_time_{0};
     bool running_ = false;
+    bool paused_ = false;
 };
-
 
 inline std::string get_today_str() {
     using namespace std::chrono;
@@ -197,7 +200,7 @@ inline std::string get_prec_unit(TimePrecision prec) {
         case TimePrecision::millisecond_precs:
             return "ms";
         case TimePrecision::microsecond_precs:
-            return "μs";
+            return "mircos";
         default:
             return "s";
     }

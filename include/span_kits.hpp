@@ -9,6 +9,8 @@
 #include <span>
 #include <stdexcept>
 #include <vector>
+#include "container_kits.hpp"
+#include "common_concepts.hpp"
 
 namespace zuc {
 template <typename Range>
@@ -18,18 +20,11 @@ using range_value_type = std::remove_cv_t<
 
 /**
  * @brief Safely creates a subspan with bounds checking
- *
- * Returns a subspan starting at offset with the specified count, or nullopt
- * if the operation would be out of bounds. This provides a safe alternative
- * to std::span::subspan() which has undefined behavior for invalid ranges.
- *
  * @param s The input span
  * @param offset Starting position (must be <= s.size())
- * @param count Number of elements (default: dynamic_extent for remaining
- * elements)
- * @return std::optional<std::span<T>> containing the subspan, or nullopt if
- * invalid
- *
+ * @param count Number of elements (default: dynamic_extent for remaining elements)
+ * @return std::optional<std::span<T>> containing the subspan, or nullopt if invalid
+ * @note Returns a subspan starting at offset with the specified count, or nullopt if the operation would be out of bounds
  * @example
  * std::vector<int> data = {1, 2, 3, 4, 5};
  * auto result = sub_span_safe(std::span(data), 1, 3);
@@ -53,24 +48,14 @@ inline std::optional<std::span<T>> sub_span_safe(
 
 /**
  * @brief Converts a span to a vector with the same elements
- *
- * Creates a new vector containing all elements from the span.
- * This is useful when you need owned storage or want to modify elements
- * without affecting the original data.
- *
- * @tparam T Element type
- * @tparam Extent Span extent (can be fixed size or std::dynamic_extent)
- * @param s The input span
- * @return std::vector<T> containing all elements from the span
- *
+ * @tparam Range Range type
+ * @param range The input range
+ * @return std::vector containing all elements from the range
+ * @note Creates a new vector containing all elements from the span. Useful when you need owned storage or want to modify elements without affecting the original data
  * @example
  * std::array<int, 3> arr = {1, 2, 3};
  * auto vec = convert_span_to_vector(std::span(arr));
  * // vec is now {1, 2, 3}
- *
- * std::vector<int> vec2 = {4, 5, 6};
- * auto vec3 = convert_span_to_vector(std::span(vec2));
- * // vec3 is now {4, 5, 6}
  */
 
 template <typename Range>
@@ -80,55 +65,56 @@ inline auto convert_span_to_vector(const Range& range) {
 }
 /**
  * @brief Checks if a span contains a specific element
- *
- * Performs a linear search to determine if the element exists in the span.
- *
- * @param obj The span to search in
+ * @param sp The span to search in
  * @param contain_obj The element to look for
  * @return true if the element is found, false otherwise
- *
+ * @note Performs a linear search to determine if the element exists in the span
  * @example
  * std::span<const int> numbers = {1, 2, 3, 4, 5};
  * bool found = contains(numbers, 3); // returns true
  */
-template <typename Range, typename U>
-    requires std::equality_comparable_with<range_value_type<Range>, U>
-constexpr bool contains(const Range& obj, const U& contain_obj) {
-    if (std::empty(obj)) return false;
-    return std::find(std::begin(obj), std::end(obj), contain_obj) != std::end(obj);
+template <typename T>
+constexpr bool contains(const std::span<T> sp, const T& contain_obj) {
+    if (sp.empty()) {
+        return false;
+    }
+    return std::find(sp.begin(), sp.end(), contain_obj) != sp.end();
 }
+
 /**
  * @brief Checks if a span contains any of the specified elements
- *
- * Returns true if at least one element from contain_objs exists in obj.
- *
- * @param obj The span to search in
+ * @param sp The span to search in
  * @param contain_objs Span of elements to look for
  * @return true if any element is found, false otherwise
- *
+ * @note Returns true if at least one element from contain_objs exists in obj
  * @example
  * std::span<int> numbers = {1, 2, 3, 4, 5};
  * bool found = contains_any(numbers, std::span{7, 8, 3}); // returns true
  */
-template <typename Range1, typename Range2>
-    requires std::equality_comparable<range_value_type<Range1>>
-constexpr bool contains_any(const Range1& obj, const Range2& contain_objs) {
-    if (std::empty(contain_objs) || std::empty(obj)) return false;
+template <typename T>
+constexpr bool contains_any(const std::span<T> sp, const std::span<T> contain_objs) {
+    if (sp.empty() || contain_objs.empty()) {
+        return false;
+    }
     for (const auto& x : contain_objs) {
-        if (contains(obj, x)) return true;  
+        if (contains(sp, x)) return true;  
     }
     return false;
 }
+
+template <typename Range, typename ElemType = get_rangelike_value_type<Range>>
+    requires RangeLike<Range>
+constexpr bool contains_if(const Range& range, UnaryPred<ElemType> auto pred) {
+    return std::any_of(range.begin(), range.end(), pred);
+    
+}
+
 /**
  * @brief Finds the first occurrence of a subspan within a span
- *
- * Searches for target within obj and returns a span pointing to the
- * matching sequence. Returns an empty span if not found.
- *
  * @param obj The span to search in
  * @param target The subspan to look for
  * @return std::span<T> pointing to the found subspan, or empty if not found
- *
+ * @note Searches for target within obj and returns a span pointing to the matching sequence
  * @example
  * std::span<int> main_span = {1, 2, 3, 4, 5, 6};
  * std::span<int> target = {3, 4, 5};
@@ -155,15 +141,9 @@ constexpr std::span<T> find_subspan(std::span<T> obj, std::span<T> target) {
 /**
  * @class ConcatSpan
  * @brief Concatenates multiple spans into a single contiguous view
- *
- * Provides a unified view over multiple spans, allowing iteration and
- * random access as if they were a single contiguous span. This is useful
- * for working with data that's split across multiple containers without
- * copying the data.
- *
  * @tparam T The element type
  * @tparam N The number of spans to concatenate (must be known at compile time)
- *
+ * @note Provides a unified view over multiple spans, allowing iteration and random access as if they were a single contiguous span. Useful for working with data that's split across multiple containers without copying the data
  * @example
  * std::array<int, 3> part1 = {1, 2, 3};
  * std::vector<int> part2 = {4, 5, 6};
@@ -203,10 +183,7 @@ class ConcatSpan {
     /**
      * @class ConstIterator
      * @brief Random access iterator for ConcatSpan
-     *
-     * Provides bidirectional iteration and random access across
-     * the concatenated spans, handling the complexity of spanning
-     * multiple underlying spans transparently.
+     * @note Provides bidirectional iteration and random access across the concatenated spans, handling the complexity of spanning multiple underlying spans transparently
      */
     class ConstIterator {
        public:

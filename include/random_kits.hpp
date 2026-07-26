@@ -1,14 +1,9 @@
 /**
  * @file random_kits.hpp
- * @author {TSKR-Mike-CYX@github.com}
  * @brief Random number generation utilities for C++20
  * @date 2026-07-15
- * 
  * @copyright Copyright (c) 2026
- * 
- * @note Provides convenient functions for generating random numbers
- *       using a seeded Mersenne Twister generator (mt19937).
- *       All functions use a shared global generator for efficiency.
+ * @note Provides convenient functions for generating random numbers using a seeded Mersenne Twister generator (mt19937). All functions use a shared global generator for efficiency.
  */
 
 #pragma once

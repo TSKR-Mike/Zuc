@@ -7,3 +7,4 @@ build/**
 ./build_gcc
 test_cross_plantform.bat
 NUL.obj
+.vscode/**
