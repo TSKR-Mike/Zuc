@@ -362,7 +362,7 @@ Developed by TSKR-Mike@github.com
 
 Tested and verified on:
 - **GCC 13+** - Full support including all features
-- **Clang 19+** - Full support except DateTime class (define `ZUC_DROP_CHRONO_TIME_ZONE` to work around)
+- **Clang 19+** - Full support except DateTime class (define `ZUC_DROP_CHRONO_TIME_ZONE` to work around, but it passed on my debian13's llvm19.If you download official llvm, the minium version is 22(with full chrono support))
 - **MSVC 2022+** - Full support including all features
 
 ### Platform Support
