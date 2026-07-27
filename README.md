@@ -23,6 +23,14 @@ zuc is a modern, header-only C++ library that provides fast, intuitive utilities
 - **Content Checks** - `contains()`, `contains_any()`, `contains_all()`
 - **Replace/Remove** - In-place and copy variants for string manipulation
 
+### Container Utilities (`container_kits.hpp`)
+- **Content Checking** - `contains()`, `contains_any()`, `contains_if()` for element searching
+- **Value Extraction** - `pop_back_value()`, `pop_front_value()` for safe element removal
+- **Map Operations** - `get_or_insert()`, `get_or_insert_default()`, `get_map_keys()`, `get_map_values()`
+- **Container Slicing** - `container_slice()` with step support for sub-container extraction
+- **Container Modification** - `erase_if()`, `merge()` for safe container manipulation
+- **Container Transformation** - `transform_all_to_vector()` for element mapping
+
 ### Span Utilities (`span_kits.hpp`)
 - **Safe Span Operations** - `sub_span_safe()` for bounds-checked span slicing with proper error handling
 - **Span Conversion** - `convert_span_to_vector()` for efficient span-to-vector conversion
@@ -57,11 +65,12 @@ zuc is a modern, header-only C++ library that provides fast, intuitive utilities
 
 ### Basic Usage
 ```cpp
-#include "string_kits.hpp"  // For string operations
-#include "io_kits.hpp"      // For file I/O
-#include "time_kits.hpp"    // For time utilities
-#include "span_kits.hpp"    // For span operations
-#include "random_kits.hpp"  // For random number generation
+#include "string_kits.hpp"      // For string operations
+#include "io_kits.hpp"          // For file I/O
+#include "time_kits.hpp"        // For time utilities
+#include "span_kits.hpp"        // For span operations
+#include "random_kits.hpp"      // For random number generation
+#include "container_kits.hpp"   // For container operations
 #include "common_concepts.hpp"  // For common type concepts
 
 using namespace zuc;
@@ -69,6 +78,10 @@ using namespace zuc;
 // Start using the library!
 auto text = "  Hello, World!  ";
 auto trimmed = trim(text);  // "Hello, World!"
+
+// Container operations
+std::vector<int> numbers = {1, 2, 3, 4, 5};
+bool found = contains(numbers, 3);  // true
 ```
 
 ### Building Tests
@@ -82,6 +95,74 @@ cmake --build .
 **Notice** - You **DON'T** need to clone the CMake files for your own projects. They are included only for building and running the test suite. The CMake files contain personal development settings and are not required for using the library.
 
 ## 💡 Examples
+
+### Container Utilities - Safe & Convenient Container Operations
+
+```cpp
+#include "container_kits.hpp"
+
+using namespace zuc;
+
+// ❌ Traditional approach - verbose and error-prone
+std::vector<int> numbers = {1, 2, 3, 4, 5};
+bool found = false;
+for (int num : numbers) {
+    if (num == 3) {
+        found = true;
+        break;
+    }
+}
+
+// ✅ zuc approach - simple and safe
+std::vector<int> numbers = {1, 2, 3, 4, 5};
+bool found = contains(numbers, 3);  // true
+
+// Check if any element matches condition
+bool has_even = contains_if(numbers, [](int x) { return x % 2 == 0; });  // true
+
+// Check if container contains any of multiple values
+std::vector<int> search = {2, 4, 6};
+bool found_any = contains_any(numbers, search);  // true
+
+// Safe value extraction from containers
+std::vector<int> vec = {1, 2, 3};
+auto last_value = pop_back_value(vec);  // Optional<int> containing 3
+if (last_value) {
+    // Use the value safely
+}
+
+std::list<int> lst = {1, 2, 3};
+auto first_value = pop_front_value(lst);  // Optional<int> containing 1
+
+// Convenient map operations
+std::unordered_map<std::string, int> scores;
+auto& score = get_or_insert(scores, "player1", 100);  // Insert if not exists
+auto& default_score = get_or_insert_default(scores, "player2", 0);  // Insert with default
+
+// Extract keys or values from maps
+std::unordered_map<std::string, int> user_ages = {{"Alice", 25}, {"Bob", 30}};
+auto names = get_map_keys(user_ages);   // {"Alice", "Bob"}
+auto ages = get_map_values(user_ages); // {25, 30}
+
+// Container slicing with step support
+std::vector<int> data = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+auto even_numbers = container_slice(data, 1, 9, 2);  // {2, 4, 6, 8}
+auto every_third = container_slice(data, 0, 9, 3);   // {1, 4, 7}
+
+// Safe container modification
+std::vector<int> numbers = {1, 2, 3, 4, 5, 6};
+erase_if(numbers, [](int x) { return x % 2 == 0; });  // {1, 3, 5}
+
+// Merge containers
+std::vector<int> first = {1, 2, 3};
+std::vector<int> second = {4, 5, 6};
+auto merged = merge(first, second);  // {1, 2, 3, 4, 5, 6}
+
+// Transform container elements
+std::vector<int> numbers = {1, 2, 3, 4, 5};
+auto squared = transform_all_to_vector<int>(numbers, [](int x) { return x * x; });
+// {1, 4, 9, 16, 25}
+```
 
 ### Time Utilities - Effortless Time Management
 
@@ -296,6 +377,7 @@ file.write("Processing complete at: {}\n", get_today_time_detailed_str());
 | Feature | Traditional C++ | zuc |
 |---------|----------------|--------|
 | String slicing | Creates new strings | Zero-allocation views |
+| Container operations | Manual loops and checks | Simple, safe functions |
 | Span operations | Manual bounds checking | Safe, bounds-checked operations |
 | File handling | Manual resource management | RAII with automatic cleanup |
 | Error handling | Return codes | Exception-based |
@@ -414,5 +496,20 @@ Tested and verified on:
 - `random_int()`, `random_double()` - Basic random numbers
 - `random_int32()`, `random_int64()` - Sized integer random numbers
 - `uniform_random_*()` - Uniform distribution aliases
+
+### Container Operations
+- `contains()` - Check if container contains element
+- `contains_any()` - Check if container contains any of specified elements
+- `contains_if()` - Check if container contains element matching predicate
+- `pop_back_value()` - Safely get and remove last element from vector
+- `pop_front_value()` - Safely get and remove first element from list/deque
+- `get_or_insert()` - Get or insert value in unordered_map
+- `get_or_insert_default()` - Get or insert with default value
+- `get_map_keys()` - Extract keys from map-like containers
+- `get_map_values()` - Extract values from map-like containers
+- `container_slice()` - Slice containers with step support
+- `erase_if()` - Remove elements matching predicate
+- `merge()` - Merge two containers
+- `transform_all_to_vector()` - Transform container elements to vector
 
 *"Built for convenience, designed for developers who value their time."*
