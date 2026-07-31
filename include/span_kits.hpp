@@ -1,3 +1,12 @@
+/**
+ * @file span_kits.hpp
+ * @brief Safe span utilities and operations for C++20
+ * @date 2026-07-30
+ * @copyright Copyright (c) 2026
+ * @note Provides bounds-checked span operations, safe conversions, and span concatenation
+ *       All operations are designed to prevent out-of-bounds access and provide clear error handling
+ */
+
 #pragma once
 #include <algorithm>
 #include <array>
@@ -14,6 +23,14 @@
 #include "container_kits.hpp"
 
 namespace zuc {
+/**
+ * @brief Type alias to extract the value type from a range
+ * @tparam Range The range type to extract value type from
+ * @note Removes const/volatile qualifiers from the value type
+ * @example
+ * std::vector<int> vec = {1, 2, 3};
+ * using ValueType = range_value_type<decltype(vec)>; // int
+ */
 template <typename Range>
 using range_value_type =
     std::remove_cv_t<typename std::iterator_traits<decltype(std::begin(
@@ -51,19 +68,22 @@ inline std::optional<std::span<T>> sub_span_safe(
 }
 
 /**
- * @brief Converts a span to a vector with the same elements
- * @tparam Range Range type
+ * @brief Converts a span or range to a vector with the same elements
+ * @tparam Range Range type to convert
  * @param range The input range
  * @return std::vector containing all elements from the range
  * @note Creates a new vector containing all elements from the span. Useful when
- * you need owned storage or want to modify elements without affecting the
- * original data
+ *       you need owned storage or want to modify elements without affecting the
+ *       original data. Automatically deduces the value type from the range.
  * @example
  * std::array<int, 3> arr = {1, 2, 3};
  * auto vec = convert_span_to_vector(std::span(arr));
  * // vec is now {1, 2, 3}
+ * 
+ * std::vector<double> doubles = {1.5, 2.5, 3.5};
+ * auto vec2 = convert_span_to_vector(doubles);
+ * // vec2 is now {1.5, 2.5, 3.5}
  */
-
 template <typename Range>
 inline auto convert_span_to_vector(const Range& range) {
     using value_type = std::decay_t<decltype(*std::begin(range))>;
@@ -557,15 +577,6 @@ class ConcatSpan {
     size_t total_size_;
 };
 
-// TODO:Finish Chunk View
-/*
-precalculate total size;
-solve the max moves(total // chunk_size);
-dereference iter returns std::span(..., chunk_size?);
-!                                       ~~~~~~~~~~~
-! but it needs to compare the size left with chunk_size first
-
-*/
 /**
  * @class ChunkSpan
  * @brief Splits a range into fixed-size chunks

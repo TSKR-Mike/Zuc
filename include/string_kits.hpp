@@ -15,24 +15,23 @@
 #include <cctype>
 #include <cstddef>
 #include <iterator>
-#include <map>
-#include <set>
 #include <span>
-#include <sstream>
 #include <string>
 #include <string_view>
-#include <unordered_map>
 #include <vector>
 
 #include "common_concepts.hpp"
 
 namespace zuc {
 
-template <Stringable T>
+template <typename T>
+    requires Stringable<T>
 std::string convert_stringable_to_string(const T& v) {
     if constexpr (std::constructible_from<std::string, T>) {
         return std::string(v);
     } else {
+        static_assert(std::integral<T> || std::floating_point<T>, 
+                      "Type must be constructible from std::string or be numeric for std::to_string");
         return std::to_string(v);
     }
 }
@@ -581,6 +580,7 @@ inline bool match_any(
 inline std::string_view to_string_view(std::span<const char> s) noexcept {
     return std::string_view(s.data(), s.size());
 }
+
 
 
 }  // namespace zuc

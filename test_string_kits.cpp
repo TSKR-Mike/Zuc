@@ -1,4 +1,5 @@
 #include "doctest.h"
+#include <ostream>
 #include "include/string_kits.hpp"
 #include <vector>
 #include <string>

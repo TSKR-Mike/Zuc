@@ -1,3 +1,12 @@
+/**
+ * @file container_kits.hpp
+ * @brief Container utilities and operations for C++20
+ * @date 2026-07-30
+ * @copyright Copyright (c) 2026
+ * @note Provides generic container operations including element search, safe removal,
+ *       map operations, and container slicing. Works with any range-like container.
+ */
+
 #pragma once
 
 #include <algorithm>
@@ -21,6 +30,20 @@
 
 namespace zuc {
 
+/**
+ * @brief Checks if a range contains a specific element
+ * @tparam Range Range type to search in
+ * @tparam U Type of element to search for
+ * @param obj The range to search in
+ * @param contain_obj The element to look for
+ * @return true if the element is found, false otherwise
+ * @note Performs a linear search using std::find. Works with any range-like container.
+ *       Returns false for empty ranges.
+ * @example
+ * std::vector<int> vec = {1, 2, 3, 4, 5};
+ * bool found = contains(vec, 3); // true
+ * bool not_found = contains(vec, 6); // false
+ */
 template <typename Range, typename U>
     requires std::equality_comparable_with<get_rangelike_value_type<Range>,
                                            U> &&
@@ -31,6 +54,19 @@ constexpr bool contains(const Range& obj, const U& contain_obj) {
            std::end(obj);
 }
 
+/**
+ * @brief Checks if a range contains any of the specified elements
+ * @tparam Range1 Type of the range to search in
+ * @tparam Range2 Type of the range containing elements to search for
+ * @param obj The range to search in
+ * @param contain_objs Range of elements to look for
+ * @return true if any element from contain_objs is found in obj, false otherwise
+ * @note Returns false if either range is empty. Performs linear search for each element.
+ * @example
+ * std::vector<int> vec = {1, 2, 3, 4, 5};
+ * std::array<int, 3> search = {2, 6, 8};
+ * bool found = contains_any(vec, search); // true (2 is in vec)
+ */
 template <typename Range1, typename Range2>
     requires std::equality_comparable_with<get_rangelike_value_type<Range1>,
                                            get_rangelike_value_type<Range2>> &&
@@ -43,6 +79,19 @@ constexpr bool contains_any(const Range1& obj, const Range2& contain_objs) {
     return false;
 }
 
+/**
+ * @brief Checks if a range contains any element satisfying a predicate
+ * @tparam Range Range type to search in
+ * @tparam ElemType Type of elements in the range (deduced if not specified)
+ * @param obj The range to search in
+ * @param pred Unary predicate function to test each element
+ * @return true if any element satisfies the predicate, false otherwise
+ * @note Returns false for empty ranges. Uses std::find_if for efficient searching.
+ * @example
+ * std::vector<int> vec = {1, 2, 3, 4, 5};
+ * bool has_even = contains_if(vec, [](int x) { return x % 2 == 0; }); // true
+ * bool has_negative = contains_if(vec, [](int x) { return x < 0; }); // false
+ */
 template <typename Range, typename ElemType = get_rangelike_value_type<Range>>
 constexpr bool contains_if(const Range& obj, UnaryPred<ElemType> auto pred) {
     if (std::empty(obj)) {
@@ -51,6 +100,17 @@ constexpr bool contains_if(const Range& obj, UnaryPred<ElemType> auto pred) {
     return std::find_if(std::begin(obj), std::end(obj), pred) != std::end(obj);
 }
 
+/**
+ * @brief Safely removes and returns the last element from a vector
+ * @tparam T Type of elements in the vector
+ * @param vec The vector to pop from
+ * @return std::optional<T> containing the removed element, or nullopt if vector is empty
+ * @note Uses move semantics for efficient element extraction. Returns empty optional for empty vectors.
+ * @example
+ * std::vector<int> vec = {1, 2, 3};
+ * auto result = pop_back_value(vec); // 3, vec is now {1, 2}
+ * auto empty = pop_back_value(std::vector<int>{}); // nullopt
+ */
 template <typename T>
 std::optional<T> pop_back_value(std::vector<T>& vec) {
     if (vec.empty()) {
@@ -61,6 +121,22 @@ std::optional<T> pop_back_value(std::vector<T>& vec) {
     return std::move(ret);
 }
 
+/**
+ * @brief Gets or inserts a value in an unordered_map with perfect forwarding
+ * @tparam KeyType Type of the map keys
+ * @tparam ValueType Type of the map values
+ * @tparam Args Types of arguments for value construction
+ * @param map The unordered_map to operate on
+ * @param key The key to look up or insert
+ * @param args Arguments to forward to ValueType constructor if insertion is needed
+ * @return Reference to the value associated with the key
+ * @note Uses try_emplace for efficient insertion that only constructs value if needed.
+ *       Perfect forwards arguments to the value constructor.
+ * @example
+ * std::unordered_map<std::string, std::string> map;
+ * auto& value = get_or_insert(map, "key", "default_value");
+ * // value is "default_value", map now contains {"key": "default_value"}
+ */
 template <typename KeyType, typename ValueType, typename... Args>
     requires std::constructible_from<ValueType, Args...>
 ValueType& get_or_insert(std::unordered_map<KeyType, ValueType>& map,
@@ -68,6 +144,23 @@ ValueType& get_or_insert(std::unordered_map<KeyType, ValueType>& map,
     return map.try_emplace(key, std::forward<Args>(args)...).first->second;
 }
 
+/**
+ * @brief Gets or inserts a value in an unordered_map with a default value
+ * @tparam KeyType Type of the map keys
+ * @tparam ValueType Type of the map values
+ * @tparam InsertElemType Type of the default value to insert
+ * @tparam InsertKeyType Type of the key to insert
+ * @param map The unordered_map to operate on
+ * @param key The key to look up or insert
+ * @param default_value The default value to use if insertion is needed
+ * @return Reference to the value associated with the key
+ * @note If the key doesn't exist, inserts the key with the default value.
+ *       Supports type conversion between key and value types.
+ * @example
+ * std::unordered_map<int, std::string> map;
+ * auto& value = get_or_insert_default(map, 1, "default");
+ * // value is "default", map now contains {1: "default"}
+ */
 template <typename KeyType, typename ValueType, typename InsertElemType,
           typename InsertKeyType>
     requires std::constructible_from<ValueType, InsertElemType> &&

@@ -1,5 +1,6 @@
 // tests/test_random_kits.cpp
 #include "doctest.h"
+#include <ostream>
 #include "include/random_kits.hpp"
 #include "include/io_kits.hpp"
 #include "include/time_kits.hpp"

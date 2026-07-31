@@ -13,7 +13,7 @@ add_executable(zuc_test
     test_string_kits.cpp
     test_io_kits.cpp
     test_random_kits.cpp
+    test_common_concepts.cpp
 )
-target_include_directories(zuc_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 # Enable testing
 add_test(NAME zucTests COMMAND zuc_test)

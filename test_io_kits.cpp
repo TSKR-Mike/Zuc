@@ -5,6 +5,7 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include <ostream>
 
 #include "doctest.h"
 #include "include/io_kits.hpp"

@@ -1,4 +1,5 @@
 #include "doctest.h"
+#include <ostream>
 #include "include/time_kits.hpp"
 #include "include/io_kits.hpp"
 #include <thread>

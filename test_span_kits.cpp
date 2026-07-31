@@ -1,5 +1,6 @@
 
 #include "doctest.h"
+#include <ostream>
 #include "include/span_kits.hpp"
 #include <array>
 #include <vector>
