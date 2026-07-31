@@ -13,15 +13,15 @@
 namespace zuc {
 
 // Global random device and generator initialization
-inline std::random_device rd_device;
+thread_local inline std::random_device rd_device;
 
 // Initialize seed with multiple entropy sources for better randomness
-inline unsigned init_seed = std::random_device{}() 
+thread_local inline unsigned init_seed = std::random_device{}() 
               ^ std::chrono::steady_clock::now().time_since_epoch().count() 
               ^ (uintptr_t)new char;
 
 // Global Mersenne Twister generator (mt19937) - shared across all functions
-static std::mt19937 global_generator(init_seed);
+thread_local inline std::mt19937 global_generator(init_seed);
 
 
 /**

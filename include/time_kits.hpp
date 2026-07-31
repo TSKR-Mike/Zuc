@@ -1,11 +1,10 @@
 /**
- * @file time.hpp
- * @author {TSKR-Mike-CYX@github.com}
- * @brief A file aiming to define time-related functions
- * @date 2026-07-15
- *
+ * @file time_kits.hpp
+ * @brief Time utilities and timing functions for C++20
+ * @date 2026-07-30
  * @copyright Copyright (c) 2026
- *
+ * @note Provides Timer, Stopwatch, and DateTime classes for performance measurement,
+ *       function benchmarking, and convenient time manipulation operations
  */
 
 #pragma once
@@ -47,6 +46,20 @@ using std::chrono::sys_days;
 using std::chrono::year_month_day;
 using std::chrono::hh_mm_ss;
 
+/**
+ * @class Timer
+ * @brief Simple timer for measuring elapsed time
+ * @note Uses steady_clock for monotonic time measurement that won't be affected by system clock changes.
+ *       Supports start, reset, and elapsed time query operations.
+ * @example
+ * Timer timer;
+ * timer.start();
+ * // ... do work ...
+ * auto elapsed = timer.get_duration_seconds();
+ * if (elapsed) {
+ *     std::cout << "Time: " << elapsed->count() << "s" << std::endl;
+ * }
+ */
 class Timer {
    public:
     Timer() = default;
@@ -63,13 +76,27 @@ class Timer {
         t_ = std::move(t.t_);
         return *this;
     }
+    
+    /**
+     * @brief Resets the timer to stopped state
+     * @note Clears the start time and sets the timer to not running
+     */
     void reset() { start_timing_ = false; }
 
+    /**
+     * @brief Starts the timer
+     * @note If the timer is already running, this restarts it
+     */
     void start() {
         start_timing_ = true;
         t_ = steady_clock::now();
     }
 
+    /**
+     * @brief Gets the elapsed time since the timer was started
+     * @return std::optional<duration<double>> containing elapsed seconds, or nullopt if timer not started
+     * @note Returns the time elapsed since start() was called
+     */
     std::optional<duration<double>> get_duration_seconds() {
         if (!start_timing_) {
             return std::nullopt;
@@ -77,6 +104,10 @@ class Timer {
         return steady_clock::now() - t_;
     }
 
+    /**
+     * @brief Checks if the timer is currently running
+     * @return true if the timer has been started and not reset, false otherwise
+     */
     bool is_running() const { return start_timing_; }
 
    protected:
@@ -85,6 +116,22 @@ class Timer {
     bool start_timing_ = false;
 };
 
+/**
+ * @class Stopwatch
+ * @brief Advanced stopwatch with pause/resume functionality
+ * @note Extends Timer functionality with the ability to pause and resume timing.
+ *       Useful for measuring cumulative time while excluding certain periods.
+ * @example
+ * Stopwatch sw;
+ * sw.start();
+ * // ... work ...
+ * sw.pause();  // Stop timing
+ * // ... don't count this time ...
+ * sw.resume(); // Continue timing
+ * // ... more work ...
+ * sw.stop();
+ * auto total = sw.get_elapsed();
+ */
 class Stopwatch {
    public:
     Stopwatch() = default;
@@ -94,6 +141,11 @@ class Stopwatch {
     Stopwatch& operator=(const Stopwatch&) = default;
     Stopwatch& operator=(Stopwatch&&) noexcept = default;
 
+    /**
+     * @brief Starts or resumes the stopwatch
+     * @note If the stopwatch is not running, starts timing from the current moment.
+     *       If already running, this call has no effect.
+     */
     void start() {
         if (!running_) {
             start_time_ = steady_clock::now();

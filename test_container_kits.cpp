@@ -1,4 +1,5 @@
 #include "doctest.h"
+#include <ostream>
 #include "include/container_kits.hpp"
 #include <memory>
 #include <vector>

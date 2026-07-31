@@ -12,21 +12,21 @@
 #include <unordered_map>
 #include <unordered_set>
 
-
-
 namespace zuc {
 
 /**
  * @concept Stringable
  * @brief Concept that checks if a type can be converted to a string
  * @tparam T The type to check
- * @note A type satisfies Stringable if it can be constructed into std::string or converted using std::to_string()
+ * @note A type satisfies Stringable if it can be constructed into std::string
+ * or if it's a numeric type that can be converted using std::to_string()
  * @example
  * Stringable auto value = 42; // int is Stringable (std::to_string)
- * Stringable auto text = "hello"; // const char* is Stringable (constructible)
+ * Stringable auto text = "hello" // const char* is Stringable (constructible)
  */
 template <typename T>
 concept Stringable = std::constructible_from<std::string, T> ||
+                     (std::integral<T> || std::floating_point<T>) &&
                      requires(T&& v) { std::to_string(std::forward<T>(v)); };
 
 /**
@@ -44,7 +44,7 @@ template <typename T, typename... Types>
 concept OneOf = (std::same_as<T, Types> || ...);
 
 template <typename T, typename... Types>
-concept IsNotOneOf = (!std::same_as<T, Types> || ...);
+concept IsNotOneOf = !(std::same_as<T, Types> || ...);
 
 /**
  * @concept UnaryPred
@@ -197,5 +197,8 @@ concept Insertable =
     requires(Range r, typename Range::const_iterator it, const ElemType& e) {
         { r.insert(it, e) } -> std::same_as<typename Range::iterator>;
     };
+
+template <typename T>
+concept NumericType = std::integral<T> || std::floating_point<T>;
 
 }  // namespace zuc

@@ -1,3 +1,12 @@
+/**
+ * @file span_kits.hpp
+ * @brief Safe span utilities and operations for C++20
+ * @date 2026-07-30
+ * @copyright Copyright (c) 2026
+ * @note Provides bounds-checked span operations, safe conversions, and span concatenation
+ *       All operations are designed to prevent out-of-bounds access and provide clear error handling
+ */
+
 #pragma once
 #include <algorithm>
 #include <array>
@@ -9,22 +18,34 @@
 #include <span>
 #include <stdexcept>
 #include <vector>
-#include "container_kits.hpp"
+
 #include "common_concepts.hpp"
+#include "container_kits.hpp"
 
 namespace zuc {
+/**
+ * @brief Type alias to extract the value type from a range
+ * @tparam Range The range type to extract value type from
+ * @note Removes const/volatile qualifiers from the value type
+ * @example
+ * std::vector<int> vec = {1, 2, 3};
+ * using ValueType = range_value_type<decltype(vec)>; // int
+ */
 template <typename Range>
-using range_value_type = std::remove_cv_t<
-    typename std::iterator_traits<decltype(std::begin(std::declval<Range&>()))>::value_type
->;
+using range_value_type =
+    std::remove_cv_t<typename std::iterator_traits<decltype(std::begin(
+        std::declval<Range&>()))>::value_type>;
 
 /**
  * @brief Safely creates a subspan with bounds checking
  * @param s The input span
  * @param offset Starting position (must be <= s.size())
- * @param count Number of elements (default: dynamic_extent for remaining elements)
- * @return std::optional<std::span<T>> containing the subspan, or nullopt if invalid
- * @note Returns a subspan starting at offset with the specified count, or nullopt if the operation would be out of bounds
+ * @param count Number of elements (default: dynamic_extent for remaining
+ * elements)
+ * @return std::optional<std::span<T>> containing the subspan, or nullopt if
+ * invalid
+ * @note Returns a subspan starting at offset with the specified count, or
+ * nullopt if the operation would be out of bounds
  * @example
  * std::vector<int> data = {1, 2, 3, 4, 5};
  * auto result = sub_span_safe(std::span(data), 1, 3);
@@ -47,17 +68,22 @@ inline std::optional<std::span<T>> sub_span_safe(
 }
 
 /**
- * @brief Converts a span to a vector with the same elements
- * @tparam Range Range type
+ * @brief Converts a span or range to a vector with the same elements
+ * @tparam Range Range type to convert
  * @param range The input range
  * @return std::vector containing all elements from the range
- * @note Creates a new vector containing all elements from the span. Useful when you need owned storage or want to modify elements without affecting the original data
+ * @note Creates a new vector containing all elements from the span. Useful when
+ *       you need owned storage or want to modify elements without affecting the
+ *       original data. Automatically deduces the value type from the range.
  * @example
  * std::array<int, 3> arr = {1, 2, 3};
  * auto vec = convert_span_to_vector(std::span(arr));
  * // vec is now {1, 2, 3}
+ * 
+ * std::vector<double> doubles = {1.5, 2.5, 3.5};
+ * auto vec2 = convert_span_to_vector(doubles);
+ * // vec2 is now {1.5, 2.5, 3.5}
  */
-
 template <typename Range>
 inline auto convert_span_to_vector(const Range& range) {
     using value_type = std::decay_t<decltype(*std::begin(range))>;
@@ -92,12 +118,13 @@ constexpr bool contains(const std::span<T> sp, const T& contain_obj) {
  * bool found = contains_any(numbers, std::span{7, 8, 3}); // returns true
  */
 template <typename T>
-constexpr bool contains_any(const std::span<T> sp, const std::span<T> contain_objs) {
+constexpr bool contains_any(const std::span<T> sp,
+                            const std::span<T> contain_objs) {
     if (sp.empty() || contain_objs.empty()) {
         return false;
     }
     for (const auto& x : contain_objs) {
-        if (contains(sp, x)) return true;  
+        if (contains(sp, x)) return true;
     }
     return false;
 }
@@ -106,7 +133,6 @@ template <typename Range, typename ElemType = get_rangelike_value_type<Range>>
     requires RangeLike<Range>
 constexpr bool contains_if(const Range& range, UnaryPred<ElemType> auto pred) {
     return std::any_of(range.begin(), range.end(), pred);
-    
 }
 
 /**
@@ -114,7 +140,8 @@ constexpr bool contains_if(const Range& range, UnaryPred<ElemType> auto pred) {
  * @param obj The span to search in
  * @param target The subspan to look for
  * @return std::span<T> pointing to the found subspan, or empty if not found
- * @note Searches for target within obj and returns a span pointing to the matching sequence
+ * @note Searches for target within obj and returns a span pointing to the
+ * matching sequence
  * @example
  * std::span<int> main_span = {1, 2, 3, 4, 5, 6};
  * std::span<int> target = {3, 4, 5};
@@ -122,7 +149,7 @@ constexpr bool contains_if(const Range& range, UnaryPred<ElemType> auto pred) {
  * // found contains {3, 4, 5}
  */
 template <typename T>
-requires std::equality_comparable<T>
+    requires std::equality_comparable<T>
 constexpr std::span<T> find_subspan(std::span<T> obj, std::span<T> target) {
     if (target.empty()) {
         return {};
@@ -143,7 +170,9 @@ constexpr std::span<T> find_subspan(std::span<T> obj, std::span<T> target) {
  * @brief Concatenates multiple spans into a single contiguous view
  * @tparam T The element type
  * @tparam N The number of spans to concatenate (must be known at compile time)
- * @note Provides a unified view over multiple spans, allowing iteration and random access as if they were a single contiguous span. Useful for working with data that's split across multiple containers without copying the data
+ * @note Provides a unified view over multiple spans, allowing iteration and
+ * random access as if they were a single contiguous span. Useful for working
+ * with data that's split across multiple containers without copying the data
  * @example
  * std::array<int, 3> part1 = {1, 2, 3};
  * std::vector<int> part2 = {4, 5, 6};
@@ -152,7 +181,7 @@ constexpr std::span<T> find_subspan(std::span<T> obj, std::span<T> target) {
  *     // Iterates over 1, 2, 3, 4, 5, 6
  * }
  */
-template <typename T, size_t N>
+template <typename ElemType, size_t N>
 class ConcatSpan {
    public:
     /**
@@ -165,7 +194,7 @@ class ConcatSpan {
      * @brief Returns the array of underlying spans
      * @return Array containing all the spans that make up this concatenation
      */
-    const std::array<std::span<T>, N> constexpr get_data() const {
+    const std::array<std::span<ElemType>, N> constexpr get_data() const {
         return all_data_;
     }
 
@@ -173,18 +202,153 @@ class ConcatSpan {
      * @brief Constructs a ConcatSpan from an array of spans
      * @param data Array of spans to concatenate
      */
-    ConcatSpan(const std::array<std::span<T>, N>& data) {
+    ConcatSpan(const std::array<std::span<ElemType>, N>& data) {
         all_data_ = data;
-        total_size_ = std::accumulate(
-            data.begin(), data.end(), 0,
-            [](size_t acc, const std::span<T>& s) { return acc + s.size(); });
+        total_size_ =
+            std::accumulate(data.begin(), data.end(), 0,
+                            [](size_t acc, const std::span<ElemType>& s) {
+                                return acc + s.size();
+                            });
     }
+
+    /**
+     * @class Iterator
+     * @brief Non-const random access iterator for ConcatSpan
+     * @note Provides bidirectional iteration and random access across the
+     * concatenated spans, allowing modification of elements
+     */
+    class Iterator {
+       public:
+        using value_type = std::remove_cv_t<ElemType>;
+        using difference_type = std::ptrdiff_t;
+        using pointer = ElemType*;
+        using reference = ElemType&;
+        using iterator_category = std::random_access_iterator_tag;
+
+        /**
+         * @brief Constructs an iterator for a ConcatSpan
+         * @param parent Pointer to the parent ConcatSpan
+         * @param pos Starting position (default: 0)
+         */
+        Iterator(ConcatSpan* parent, size_t pos = 0)
+            : parent_(parent), pos_(pos), max_size_(parent_->size()) {
+            assert(parent != nullptr);
+            assert(pos <= parent_->size());
+        }
+
+        Iterator& operator++() {
+            assert(pos_ < max_size_ && "pos is already at the end");
+            ++pos_;
+            return *this;
+        }
+
+        Iterator& operator--() {
+            assert(pos_ > 0 && "pos already is 0");
+            --pos_;
+            return *this;
+        }
+
+        Iterator operator++(int) {
+            assert(pos_ < max_size_ && "pos is already at the end");
+            Iterator temp(*this);
+            ++*this;
+            return temp;
+        }
+
+        Iterator operator--(int) {
+            assert(pos_ > 0 && "pos already is 0");
+            Iterator temp(*this);
+            --*this;
+            return temp;
+        }
+
+        /**
+         * @brief Addition operator for random access
+         * @param offset Number of positions to advance
+         * @return New iterator at advanced position
+         */
+        Iterator operator+(size_t offset) const {
+            assert(pos_ + offset <= max_size_);
+            return {parent_, pos_ + offset};
+        }
+
+        /**
+         * @brief Subtraction operator for random access
+         * @param offset Number of positions to go back
+         * @return New iterator at retreated position
+         */
+        Iterator operator-(size_t offset) const {
+            assert(pos_ >= offset);
+            return {parent_, pos_ - offset};
+        }
+
+        /**
+         * @brief Subtraction assignment operator
+         * @param offset Number of positions to go back
+         * @return Reference to this iterator
+         */
+        Iterator& operator-=(size_t offset) {
+            assert(pos_ >= offset);
+            pos_ -= offset;
+            return *this;
+        }
+
+        /**
+         * @brief Addition assignment operator
+         * @param offset Number of positions to advance
+         * @return Reference to this iterator
+         */
+        Iterator& operator+=(size_t offset) {
+            assert(pos_ + offset <= max_size_);
+            pos_ += offset;
+            return *this;
+        }
+
+        /**
+         * @brief Equality comparison operator
+         * @param it Iterator to compare with
+         * @return true if iterators point to same position
+         */
+        bool operator==(const Iterator& it) const { return it.pos_ == pos_; }
+
+        /**
+         * @brief Inequality comparison operator
+         * @param it Iterator to compare with
+         * @return true if iterators point to different positions
+         */
+        bool operator!=(const Iterator& it) const { return it.pos_ != pos_; }
+
+        /**
+         * @brief Dereference operator
+         * @return Reference to the element at current position
+         */
+        ElemType& operator*() const {
+            assert(pos_ < parent_->size());
+            size_t offset = 0;
+            for (auto& span : parent_->all_data_) {
+                if (pos_ < offset + span.size()) {
+                    return span[pos_ - offset];
+                }
+                offset += span.size();
+            }
+            assert(false && "unreachable");
+            __builtin_unreachable();
+        }
+
+       private:
+        ConcatSpan* parent_ = nullptr;
+        size_t pos_ = 0;
+        size_t max_size_;
+    };
 
     /**
      * @class ConstIterator
      * @brief Random access iterator for ConcatSpan
-     * @note Provides bidirectional iteration and random access across the concatenated spans, handling the complexity of spanning multiple underlying spans transparently
+     * @note Provides bidirectional iteration and random access across the
+     * concatenated spans, handling the complexity of spanning multiple
+     * underlying spans transparently
      */
+
     class ConstIterator {
        public:
         /**
@@ -192,10 +356,10 @@ class ConcatSpan {
          * @param parent Pointer to the parent ConcatSpan
          * @param pos Starting position (default: 0)
          */
-        using value_type = std::remove_cv_t<T>;
+        using value_type = std::remove_cv_t<ElemType>;
         using difference_type = std::ptrdiff_t;
-        using pointer = const T*;
-        using reference = const T&;
+        using pointer = const ElemType*;
+        using reference = const ElemType&;
         using iterator_category = std::random_access_iterator_tag;
         ConstIterator(const ConcatSpan* parent, size_t pos = 0)
             : parent_(parent), pos_(pos), max_size_(parent_->size()) {
@@ -250,7 +414,7 @@ class ConcatSpan {
          * @param offset Number of positions to advance
          * @return New iterator at advanced position
          */
-        ConstIterator operator+(size_t offset) {
+        ConstIterator operator+(size_t offset) const {
             assert(pos_ + offset <= max_size_);
             return {parent_, pos_ + offset};
         }
@@ -260,7 +424,7 @@ class ConcatSpan {
          * @param offset Number of positions to go back
          * @return New iterator at retreated position
          */
-        ConstIterator operator-(size_t offset) {
+        ConstIterator operator-(size_t offset) const {
             assert(pos_ >= offset);
             return {parent_, pos_ - offset};
         }
@@ -309,7 +473,7 @@ class ConcatSpan {
          * @brief Dereference operator
          * @return Const reference to the element at current position
          */
-        const T& operator*() const {
+        const ElemType& operator*() const {
             assert(pos_ < parent_->size());
             size_t offset = 0;
             for (const auto& span : parent_->all_data_) {
@@ -318,6 +482,8 @@ class ConcatSpan {
                 }
                 offset += span.size();
             }
+            assert(false && "unreachable");
+            __builtin_unreachable();
         }
 
        protected:
@@ -327,38 +493,69 @@ class ConcatSpan {
         size_t max_size_;
     };
 
-
     /**
      * @brief Returns iterator to the beginning
      * @return Iterator pointing to first element
      */
-    ConstIterator begin() { return {this}; }
+    Iterator begin() { return {this}; }
 
     /**
      * @brief Returns iterator to the end
      * @return Iterator pointing past the last element
      */
-    ConstIterator end() { return {this, total_size_}; }
+    Iterator end() { return {this, total_size_}; }
 
     /**
      * @brief Returns const iterator to the beginning
      * @return Const iterator pointing to first element
      */
-    ConstIterator cbegin() { return {this}; }
+    ConstIterator begin() const { return {this}; }
 
     /**
      * @brief Returns const iterator to the end
      * @return Const iterator pointing past the last element
      */
-    ConstIterator cend() { return {this, total_size_}; }
+    ConstIterator end() const { return {this, total_size_}; }
+
+    /**
+     * @brief Returns const iterator to the beginning
+     * @return Const iterator pointing to first element
+     */
+    ConstIterator cbegin() const { return {this}; }
+
+    /**
+     * @brief Returns const iterator to the end
+     * @return Const iterator pointing past the last element
+     */
+    ConstIterator cend() const { return {this, total_size_}; }
+
+    /**
+     * @brief Random access operator (no bounds checking)
+     * @param index Element index
+     * @return Reference to element at index
+     */
+    ElemType& operator[](size_t index) { return *Iterator(this, index); }
 
     /**
      * @brief Random access operator (no bounds checking)
      * @param index Element index
      * @return Const reference to element at index
      */
-    const T& operator[](size_t index) const {
+    const ElemType& operator[](size_t index) const {
         return *ConstIterator(this, index);
+    }
+
+    /**
+     * @brief Random access with bounds checking
+     * @param index Element index
+     * @return Reference to element at index
+     * @throws std::out_of_range if index >= size()
+     */
+    ElemType& at(size_t index) {
+        if (index >= total_size_) {
+            throw std::out_of_range("ConcatSpan::at: index out of range");
+        }
+        return *Iterator(this, index);
     }
 
     /**
@@ -367,7 +564,7 @@ class ConcatSpan {
      * @return Const reference to element at index
      * @throws std::out_of_range if index >= size()
      */
-    const T& at(size_t index) const {
+    const ElemType& at(size_t index) const {
         if (index >= total_size_) {
             throw std::out_of_range("ConcatSpan::at: index out of range");
         }
@@ -376,8 +573,448 @@ class ConcatSpan {
 
    protected:
    private:
-    std::array<std::span<T>, N> all_data_;
+    std::array<std::span<ElemType>, N> all_data_;
     size_t total_size_;
+};
+
+/**
+ * @class ChunkSpan
+ * @brief Splits a range into fixed-size chunks
+ * @tparam Range The input range type
+ * @tparam chunk_size The size of each chunk
+ * @tparam ElemType The element type (deduced from Range)
+ * @note Provides a view over the range as a sequence of fixed-size spans.
+ * The last chunk may be smaller than chunk_size if the range size is not
+ * a multiple of chunk_size.
+ * @example
+ * std::vector<int> data = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+ * ChunkSpan<std::vector<int>, 3> chunks(data);
+ * for (auto chunk : chunks) {
+ *     // chunk is std::span<int> with up to 3 elements
+ * }
+ */
+template <typename Range, size_t chunk_size,
+          typename ElemType = get_rangelike_value_type<Range>>
+    requires RangeLike<Range> && (!is_map_like_v<Range>)
+class ChunkSpan {
+   public:
+    /**
+     * @brief Constructs a ChunkSpan from a range
+     * @param r The input range
+     */
+    explicit ChunkSpan(const Range& r)
+        : data_(r),
+          total_size_(std::size(r)),
+          chunks_num_(total_size_ / chunk_size) {}
+    /**
+     * @class ConstIterator
+     * @brief Const random access iterator for ChunkSpan
+     * @note Provides iteration over chunks, where each dereference returns
+     * a const span of elements
+     */
+    class ConstIterator {
+       public:
+        using value_type = std::span<std::remove_cv_t<ElemType>>;
+        using difference_type = std::ptrdiff_t;
+        using pointer = const ElemType*;
+        using reference = const ElemType&;
+        using iterator_category = std::random_access_iterator_tag;
+
+        /**
+         * @brief Constructs an iterator for a ChunkSpan
+         * @param p Pointer to the parent ChunkSpan
+         * @param offset Starting chunk offset (default: 0)
+         */
+        explicit ConstIterator(ChunkSpan* p, size_t offset = 0)
+            : parent_(p), curr_chunk_offset_(offset) {
+            assert(p != nullptr);
+            total_chunks_ = parent_->chunks_num_;
+            total_size_ = parent_->total_size_;
+        }
+
+        ConstIterator& operator++() {
+            assert(total_chunks_ != 0 && "the span has no chunks");
+            assert(curr_chunk_offset_ + 1 < total_chunks_ &&
+                   "cannot increment past the last chunk");
+            ++curr_chunk_offset_;
+            return *this;
+        }
+        ConstIterator operator++(int) {
+            assert(total_chunks_ != 0 && "the span has no chunks");
+            assert(curr_chunk_offset_ + 1 < total_chunks_ &&
+                   "cannot increment past the last chunk");
+            ConstIterator temp = *this;
+            ++curr_chunk_offset_;
+            return temp;
+        }
+
+        ConstIterator& operator--() {
+            assert(curr_chunk_offset_ != 0 &&
+                   "cannot decrement before the first chunk");
+            --curr_chunk_offset_;
+            return *this;
+        }
+
+        ConstIterator operator--(int) {
+            assert(curr_chunk_offset_ != 0 &&
+                   "cannot decrement before the first chunk");
+            ConstIterator temp = *this;
+            --curr_chunk_offset_;
+            return temp;
+        }
+
+        const std::span<ElemType> operator*() const {
+            assert(curr_chunk_offset_ < total_chunks_);
+            if (total_chunks_ == 0) {
+                return {};
+            }
+            if (curr_chunk_offset_ < (total_chunks_ - 1)) {
+                return parent_->data_.subspan(curr_chunk_offset_ * chunk_size,
+                                              chunk_size);
+            } else {
+                return parent_->data_.subspan(curr_chunk_offset_ * chunk_size);
+            }
+        }
+
+        /**
+         * @brief Equality comparison operator
+         * @param other Iterator to compare with
+         * @return true if iterators point to same chunk
+         */
+        bool operator==(const ConstIterator& other) const {
+            return curr_chunk_offset_ == other.curr_chunk_offset_;
+        }
+
+        /**
+         * @brief Inequality comparison operator
+         * @param other Iterator to compare with
+         * @return true if iterators point to different chunks
+         */
+        bool operator!=(const ConstIterator& other) const {
+            return curr_chunk_offset_ != other.curr_chunk_offset_;
+        }
+
+        /**
+         * @brief Addition operator for random access
+         * @param n Number of chunks to advance
+         * @return New iterator at advanced position
+         */
+        ConstIterator operator+(difference_type n) const {
+            assert(total_chunks_ != 0 && "the span has no chunks");
+            assert(curr_chunk_offset_ + n <= total_chunks_ &&
+                   "cannot move beyond the end");
+            ConstIterator temp = *this;
+            temp += n;
+            return temp;
+        }
+
+        /**
+         * @brief Subtraction operator for random access
+         * @param n Number of chunks to go back
+         * @return New iterator at retreated position
+         */
+        ConstIterator operator-(difference_type n) const {
+            assert(total_chunks_ != 0 && "the span has no chunks");
+            assert(curr_chunk_offset_ >= n &&
+                   "cannot move before the first chunk");
+            ConstIterator temp = *this;
+            temp -= n;
+            return temp;
+        }
+
+        /**
+         * @brief Addition assignment operator
+         * @param n Number of chunks to advance
+         * @return Reference to this iterator
+         */
+        ConstIterator& operator+=(difference_type n) {
+            assert(total_chunks_ != 0 && "the span has no chunks");
+            assert(curr_chunk_offset_ + n <= total_chunks_ &&
+                   "cannot move beyond the end");
+            curr_chunk_offset_ += n;
+            return *this;
+        }
+
+        /**
+         * @brief Subtraction assignment operator
+         * @param n Number of chunks to go back
+         * @return Reference to this iterator
+         */
+        ConstIterator& operator-=(difference_type n) {
+            assert(total_chunks_ != 0 && "the span has no chunks");
+            assert(curr_chunk_offset_ >= n &&
+                   "cannot move before the first chunk");
+            curr_chunk_offset_ -= n;
+            return *this;
+        }
+
+       protected:
+       private:
+        ChunkSpan* parent_ = nullptr;
+        size_t curr_chunk_offset_ =
+            0;  // Record how many chunks did the iterator leave behind, should
+                // always smaller/equal than (total_chunk - 1)
+        size_t total_chunks_ = 0;
+        size_t total_size_ = 0;
+    };
+
+    /**
+     * @class Iterator
+     * @brief Non-const random access iterator for ChunkSpan
+     * @note Provides iteration over chunks, where each dereference returns
+     * a mutable span of elements
+     */
+    class Iterator {
+       public:
+        using value_type = std::span<std::remove_cv_t<ElemType>>;
+        using difference_type = std::ptrdiff_t;
+        using pointer = ElemType*;
+        using reference = ElemType&;
+        using iterator_category = std::random_access_iterator_tag;
+
+        /**
+         * @brief Constructs an iterator for a ChunkSpan
+         * @param p Pointer to the parent ChunkSpan
+         * @param offset Starting chunk offset (default: 0)
+         */
+        explicit Iterator(ChunkSpan* p, size_t offset = 0)
+            : parent_(p), curr_chunk_offset_(offset) {
+            assert(p != nullptr);
+            total_chunks_ = parent_->chunks_num_;
+            total_size_ = parent_->total_size_;
+        }
+
+        Iterator& operator++() {
+            assert(total_chunks_ != 0 && "the span has no chunks");
+            assert(curr_chunk_offset_ + 1 < total_chunks_ &&
+                   "cannot increment past the last chunk");
+            ++curr_chunk_offset_;
+            return *this;
+        }
+        Iterator operator++(int) {
+            assert(total_chunks_ != 0 && "the span has no chunks");
+            assert(curr_chunk_offset_ + 1 < total_chunks_ &&
+                   "cannot increment past the last chunk");
+            Iterator temp = *this;
+            ++curr_chunk_offset_;
+            return temp;
+        }
+
+        Iterator& operator--() {
+            assert(curr_chunk_offset_ != 0 &&
+                   "cannot decrement before the first chunk");
+            --curr_chunk_offset_;
+            return *this;
+        }
+
+        Iterator operator--(int) {
+            assert(curr_chunk_offset_ != 0 &&
+                   "cannot decrement before the first chunk");
+            Iterator temp = *this;
+            --curr_chunk_offset_;
+            return temp;
+        }
+
+        std::span<ElemType> operator*() const {
+            assert(curr_chunk_offset_ < total_chunks_);
+            if (total_chunks_ == 0) {
+                return {};
+            }
+            if (curr_chunk_offset_ < (total_chunks_ - 1)) {
+                return parent_->data_.subspan(curr_chunk_offset_ * chunk_size,
+                                              chunk_size);
+            } else {
+                return parent_->data_.subspan(curr_chunk_offset_ * chunk_size);
+            }
+        }
+
+        /**
+         * @brief Equality comparison operator
+         * @param other Iterator to compare with
+         * @return true if iterators point to same chunk
+         */
+        bool operator==(const Iterator& other) const {
+            return curr_chunk_offset_ == other.curr_chunk_offset_;
+        }
+
+        /**
+         * @brief Inequality comparison operator
+         * @param other Iterator to compare with
+         * @return true if iterators point to different chunks
+         */
+        bool operator!=(const Iterator& other) const {
+            return curr_chunk_offset_ != other.curr_chunk_offset_;
+        }
+
+        /**
+         * @brief Addition operator for random access
+         * @param n Number of chunks to advance
+         * @return New iterator at advanced position
+         */
+        Iterator operator+(difference_type n) const {
+            assert(total_chunks_ != 0 && "the span has no chunks");
+            assert(curr_chunk_offset_ + n <= total_chunks_ &&
+                   "cannot move beyond the end");
+            Iterator temp = *this;
+            temp += n;
+            return temp;
+        }
+
+        /**
+         * @brief Subtraction operator for random access
+         * @param n Number of chunks to go back
+         * @return New iterator at retreated position
+         */
+        Iterator operator-(difference_type n) const {
+            assert(total_chunks_ != 0 && "the span has no chunks");
+            assert(curr_chunk_offset_ >= n &&
+                   "cannot move before the first chunk");
+            Iterator temp = *this;
+            temp -= n;
+            return temp;
+        }
+
+        /**
+         * @brief Addition assignment operator
+         * @param n Number of chunks to advance
+         * @return Reference to this iterator
+         */
+        Iterator& operator+=(difference_type n) {
+            assert(total_chunks_ != 0 && "the span has no chunks");
+            assert(curr_chunk_offset_ + n <= total_chunks_ &&
+                   "cannot move beyond the end");
+            curr_chunk_offset_ += n;
+            return *this;
+        }
+
+        /**
+         * @brief Subtraction assignment operator
+         * @param n Number of chunks to go back
+         * @return Reference to this iterator
+         */
+        Iterator& operator-=(difference_type n) {
+            assert(total_chunks_ != 0 && "the span has no chunks");
+            assert(curr_chunk_offset_ >= n &&
+                   "cannot move before the first chunk");
+            curr_chunk_offset_ -= n;
+            return *this;
+        }
+
+       private:
+        ChunkSpan* parent_ = nullptr;
+        size_t curr_chunk_offset_ = 0;
+        size_t total_chunks_ = 0;
+        size_t total_size_ = 0;
+    };
+
+    /**
+     * @brief Returns the total number of elements in the range
+     * @return Total size of the underlying range
+     */
+    constexpr size_t size() const { return total_size_; }
+
+    /**
+     * @brief Returns iterator to the beginning
+     * @return Iterator pointing to first chunk
+     */
+    Iterator begin() { return Iterator(this); }
+
+    /**
+     * @brief Returns iterator to the end
+     * @return Iterator pointing past the last chunk
+     */
+    Iterator end() { return Iterator(this, chunks_num_); }
+
+    /**
+     * @brief Returns const iterator to the beginning
+     * @return Const iterator pointing to first chunk
+     */
+    ConstIterator begin() const {
+        return ConstIterator(const_cast<ChunkSpan*>(this));
+    }
+
+    /**
+     * @brief Returns const iterator to the end
+     * @return Const iterator pointing past the last chunk
+     */
+    ConstIterator end() const {
+        return ConstIterator(const_cast<ChunkSpan*>(this), chunks_num_);
+    }
+
+    /**
+     * @brief Returns const iterator to the beginning
+     * @return Const iterator pointing to first chunk
+     */
+    ConstIterator cbegin() const {
+        return ConstIterator(const_cast<ChunkSpan*>(this));
+    }
+
+    /**
+     * @brief Returns const iterator to the end
+     * @return Const iterator pointing past the last chunk
+     */
+    ConstIterator cend() const {
+        return ConstIterator(const_cast<ChunkSpan*>(this), chunks_num_);
+    }
+
+    /**
+     * @brief Returns the underlying data span
+     * @return Span containing all elements
+     */
+    std::span<ElemType> get_data() const { return data_; }
+
+    /**
+     * @brief Random access operator (no bounds checking)
+     * @param index Element index
+     * @return Reference to element at index
+     */
+    ElemType& operator[](size_t index) {
+        assert(index < total_size_);
+        return data_[index];
+    }
+
+    /**
+     * @brief Random access operator (no bounds checking)
+     * @param index Element index
+     * @return Const reference to element at index
+     */
+    const ElemType& operator[](size_t index) const {
+        assert(index < total_size_);
+        return data_[index];
+    }
+
+    /**
+     * @brief Random access with bounds checking
+     * @param index Element index
+     * @return Reference to element at index
+     * @throws std::out_of_range if index >= size()
+     */
+    ElemType& at(size_t index) {
+        if (index >= total_size_) {
+            throw std::out_of_range("ChunkSpan::at: index out of range");
+        }
+        return data_[index];
+    }
+
+    /**
+     * @brief Random access with bounds checking
+     * @param index Element index
+     * @return Const reference to element at index
+     * @throws std::out_of_range if index >= size()
+     */
+    const ElemType& at(size_t index) const {
+        if (index >= total_size_) {
+            throw std::out_of_range("ChunkSpan::at: index out of range");
+        }
+        return data_[index];
+        return data_[index];
+    }
+
+   protected:
+   private:
+    std::span<ElemType> data_;
+    size_t total_size_ = 0;
+    size_t chunks_num_ = 0;
 };
 
 }  // namespace zuc
