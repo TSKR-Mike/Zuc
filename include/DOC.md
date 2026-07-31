@@ -48,6 +48,13 @@ cmake --build .
 
 String utilities provide zero-allocation operations using `std::string_view` for maximum performance.
 
+**Key Features:**
+- Zero-allocation substring operations
+- Efficient trimming with view-based variants
+- Flexible splitting and joining
+- Pattern matching and content checking
+- Safe in-place and copy-based modifications
+
 #### Substring Operations
 
 ```cpp
@@ -157,6 +164,13 @@ bool matches = match_any(value, {"apple", "banana", "cherry"});  // true
 
 Span utilities provide safe, bounds-checked operations on `std::span`.
 
+**Key Features:**
+- Bounds-checked span slicing
+- Efficient span-to-vector conversion
+- Content searching and subspan finding
+- Multi-span concatenation with random access
+- Complete iterator support for range-based loops
+
 #### Safe Span Operations
 
 ```cpp
@@ -211,6 +225,13 @@ int fifth = concatenated[4];  // 5
 ### I/O Operations (`io_kits.hpp`)
 
 I/O operations provide safe, RAII-based file handling and convenient console I/O.
+
+**Key Features:**
+- RAII-based file management with automatic cleanup
+- Formatted console I/O with type safety
+- Efficient line-by-line file reading
+- Comprehensive exception handling
+- File pointer management utilities
 
 #### File Management
 
@@ -267,6 +288,15 @@ file.reset_write_pointer_to_last();  // Reset to end
 ### Time Utilities (`time_kits.hpp`)
 
 Time utilities provide easy-to-use timing, date manipulation, and benchmarking.
+
+**Key Features:**
+- Simple timer and stopwatch utilities
+- DateTime class with arithmetic operations
+- Function benchmarking with detailed statistics
+- Flexible time formatting
+- Convenient sleep functions
+
+**Note:** DateTime class requires full C++20 chrono implementation. Define `ZUC_DROP_CHRONO_TIME_ZONE` if unavailable.
 
 #### Timer and Stopwatch
 
@@ -354,6 +384,13 @@ sleep(2.5);  // Sleep for 2.5 seconds
 
 Random generation utilities provide convenient functions for generating random numbers.
 
+**Key Features:**
+- Basic random number generation (int, double, long long)
+- Sized integer generation (int32, int64)
+- Uniform distribution semantic aliases
+- Modern C++ random engine with proper seeding
+- Thread-safe operations
+
 #### Basic Random Numbers
 
 ```cpp
@@ -388,6 +425,14 @@ auto uniform_double = uniform_random_double(0.0, 1.0);
 ### Container Utilities (`container_kits.hpp`)
 
 Container utilities provide safe operations on standard containers.
+
+**Key Features:**
+- Content checking with predicates
+- Safe value extraction from containers
+- Convenient map operations
+- Container slicing with step support
+- Safe container modification
+- Container transformation utilities
 
 #### Content Checking
 
@@ -452,6 +497,13 @@ auto squared = transform_all_to_vector<int>(numbers, [](int x) { return x * x; }
 
 Common concepts provide type constraints for template programming.
 
+**Key Features:**
+- Stringable concept for string conversion
+- Type constraint concepts (OneOf, UnaryPred, BinaryPred)
+- Callable concepts with return type specification
+- Range concepts for container operations
+- Compile-time type safety for templates
+
 #### Stringable Concept
 
 ```cpp
@@ -496,6 +548,185 @@ void process_range(const R& range) {
 template<RangeLikeElemTypeSpecified<R, int>>
 void process_int_range(const R& range) {
     // R must be a range of int values
+}
+```
+
+### Numerics Utilities (`numerics_kits.hpp`)
+
+Numerics utilities provide compile-time type selection and overflow-checked arithmetic operations.
+
+**Key Features:**
+- Compile-time type selection for optimal memory usage
+- Overflow-checked arithmetic operations
+- Platform-specific optimizations using intrinsics
+- Safe numeric operations with optional return types
+
+#### Compile-time Type Selection
+
+```cpp
+// Select smallest unsigned type that can hold the value
+using Type1 = select_by_max_unsigned_t<255>;   // uint8_t
+using Type2 = select_by_max_unsigned_t<256>;   // uint16_t
+using Type3 = select_by_max_unsigned_t<65535>; // uint16_t
+using Type4 = select_by_max_unsigned_t<65536>; // uint32_t
+
+// Select smallest type that can hold the range
+using SignedType = select_by_range_t<-100, 100>;    // int8_t
+using UnsignedType = select_by_range_t<0, 255>;     // uint8_t
+using LargeType = select_by_range_t<0, 100000>;    // uint32_t
+
+// Select type for single value
+using ValueType = select_by_value_t<42>;  // int8_t
+```
+
+#### Overflow-Checked Arithmetic
+
+```cpp
+// Safe addition with overflow detection
+auto result1 = checked_add<uint8_t>(200, 50);  // nullopt (overflow)
+auto result2 = checked_add<uint8_t>(200, 55);  // 255
+auto result3 = checked_add<int>(-100, 50);     // -50
+
+// Safe subtraction with underflow detection
+auto result1 = checked_sub<uint8_t>(100, 150); // nullopt (underflow)
+auto result2 = checked_sub<uint8_t>(200, 50);  // 150
+auto result3 = checked_sub<int>(-100, 50);     // -150
+
+// Safe multiplication with overflow detection
+auto result1 = checked_mul<uint8_t>(100, 3);   // nullopt (overflow: 300 > 255)
+auto result2 = checked_mul<uint8_t>(50, 4);    // 200
+auto result3 = checked_mul<int>(-100, 2);     // -200
+
+// Check for success
+if (auto sum = checked_add<int>(INT_MAX, 1)) {
+    // Safe to use the result
+    int value = *sum;
+} else {
+    // Handle overflow
+    std::cout << "Addition overflowed!" << std::endl;
+}
+```
+
+#### Platform-Specific Optimizations
+
+```cpp
+// The library automatically uses platform-specific intrinsics:
+// - MSVC: _addcarry_u64, _subborrow_u64, _umul128
+// - GCC/Clang: __builtin_add_overflow, __builtin_sub_overflow, __builtin_mul_overflow
+// - Smaller types are promoted to larger types for safe calculation
+```
+
+### RAII Utilities (`raii_kits.hpp`)
+
+RAII utilities provide scope guards for automatic resource management and cleanup.
+
+**Key Features:**
+- Automatic cleanup on scope exit
+- Success/failure conditional execution
+- Dismissable guards for flexible control
+- Exception-safe resource management
+
+#### Basic Scope Guard
+
+```cpp
+{
+    FILE* file = fopen("data.txt", "r");
+    auto guard = generate_scope_guard([file]() {
+        fclose(file);
+        std::cout << "File closed automatically" << std::endl;
+    });
+    
+    // Use file...
+    // File will be closed automatically when leaving scope
+}
+```
+
+#### Success-Only Scope Guard
+
+```cpp
+{
+    std::vector<int> data = {1, 2, 3};
+    
+    auto guard = generate_scope_guard_success([&data]() {
+        // This only runs if no exception is thrown
+        std::cout << "Operation succeeded, saving data..." << std::endl;
+        save_to_database(data);
+    });
+    
+    // Process data...
+    process_data(data);
+    
+    // If no exception, the guard will save the data
+}
+```
+
+#### Failure-Only Scope Guard
+
+```cpp
+{
+    auto guard = generate_scope_guard_failed([]() {
+        // This only runs if an exception is thrown
+        std::cout << "Operation failed, rolling back..." << std::endl;
+        rollback_transaction();
+    });
+    
+    // Perform transaction...
+    update_database();
+    
+    // If exception thrown, rollback happens automatically
+}
+```
+
+#### Dismissing Scope Guards
+
+```cpp
+{
+    auto guard = generate_scope_guard([]() {
+        std::cout << "This won't run" << std::endl;
+    });
+    
+    // Do some work...
+    if (success_condition) {
+        guard.dismiss();  // Prevent the guard from running
+    }
+}
+```
+
+#### Practical Examples
+
+```cpp
+// File handling with automatic cleanup
+void process_file(const std::string& path) {
+    FILE* file = fopen(path.c_str(), "r");
+    if (!file) throw std::runtime_error("Cannot open file");
+    
+    auto cleanup = generate_scope_guard([file]() { fclose(file); });
+    
+    // Process file...
+    char buffer[1024];
+    while (fgets(buffer, sizeof(buffer), file)) {
+        // Process line
+    }
+    // File closed automatically
+}
+
+// Transaction management
+void update_records() {
+    begin_transaction();
+    
+    auto rollback = generate_scope_guard_failed([]() {
+        rollback_transaction();
+    });
+    
+    auto commit = generate_scope_guard_success([]() {
+        commit_transaction();
+    });
+    
+    // Perform updates...
+    update_record(1, "new value");
+    update_record(2, "another value");
+    
+    // Transaction committed or rolled back automatically
 }
 ```
 
@@ -553,7 +784,7 @@ auto str = convert_range_to_string(map);  // "{a: 1, b: 2}"
 | `read_a_line_from_console(fmt, ...)` | Interactive console input |
 | `open_file(path)` | Safe file opening |
 
-### Time Classes and Functions
+### Time Classes and Functions (`time_kits.hpp`)
 
 | Class/Function | Description |
 |----------------|-------------|
@@ -562,6 +793,66 @@ auto str = convert_range_to_string(map);  // "{a: 1, b: 2}"
 | `DateTime` | Date/time manipulation |
 | `time_a_function(name, settings, f, ...)` | Function benchmarking |
 | `sleep(seconds)` | Convenient sleep function |
+
+### Random Functions (`random_kits.hpp`)
+
+| Function | Description | Returns |
+|----------|-------------|---------|
+| `random_int(min, max)` | Random integer in range [min, max] | `int` |
+| `random_double(min, max)` | Random double in range [min, max) | `double` |
+| `random_long_long(min, max)` | Random long long in range | `long long` |
+| `random_int32(min, max)` | Random 32-bit integer | `int32_t` |
+| `random_int64(min, max)` | Random 64-bit integer | `int64_t` |
+| `uniform_random_int(min, max)` | Uniform random integer | `int` |
+| `uniform_random_double(min, max)` | Uniform random double | `double` |
+
+### Container Functions (`container_kits.hpp`)
+
+| Function | Description | Returns |
+|----------|-------------|---------|
+| `contains(container, value)` | Check if contains element | `bool` |
+| `contains_any(container, values)` | Check if contains any of values | `bool` |
+| `contains_if(container, pred)` | Check if contains element matching predicate | `bool` |
+| `pop_back_value(vector)` | Remove and return last element | `Optional<T>` |
+| `pop_front_value(list)` | Remove and return first element | `Optional<T>` |
+| `get_or_insert(map, key, value)` | Get or insert value | `T&` |
+| `get_or_insert_default(map, key, default)` | Get or insert with default | `T&` |
+| `get_map_keys(map)` | Extract keys from map | `unordered_set<Key>` |
+| `get_map_values(map)` | Extract values from map | `unordered_set<Value>` |
+| `container_slice(c, start, end, step)` | Slice container with step | `vector<T>` |
+| `erase_if(container, pred)` | Remove elements matching predicate | `void` |
+| `merge(a, b)` | Merge two containers | `vector<T>` |
+| `transform_all_to_vector<T>(c, f)` | Transform elements | `vector<T>` |
+
+### Numerics Functions and Types (`numerics_kits.hpp`)
+
+| Function/Type | Description | Returns |
+|---------------|-------------|---------|
+| `checked_add<T>(a, b)` | Overflow-checked addition | `Optional<T>` |
+| `checked_sub<T>(a, b)` | Overflow-checked subtraction | `Optional<T>` |
+| `checked_mul<T>(a, b)` | Overflow-checked multiplication | `Optional<T>` |
+| `select_by_max_unsigned_t<MAX>` | Smallest unsigned type for max value | Type alias |
+| `select_by_range_t<MIN, MAX>` | Smallest type for range | Type alias |
+| `select_by_value_t<VALUE>` | Smallest type for value | Type alias |
+
+### RAII Classes and Functions (`raii_kits.hpp`)
+
+| Class/Function | Description | Returns |
+|----------------|-------------|---------|
+| `generate_scope_guard(func)` | Create cleanup action on scope exit | `ScopeGuard` |
+| `generate_scope_guard_success(func)` | Cleanup only if no exception | `ScopeGuard` |
+| `generate_scope_guard_failed(func)` | Cleanup only if exception | `ScopeGuard` |
+| `ScopeGuard::dismiss()` | Prevent cleanup from running | `void` |
+
+### String Conversion Functions (`string_converts.hpp`)
+
+| Function | Description | Returns |
+|----------|-------------|---------|
+| `convert_range_to_string(range)` | Convert container to string | `std::string` |
+| `convert_to_bytes(value)` | Convert object to byte span | `span<const std::byte>` |
+| `convert_to_hex(data)` | Convert to hexadecimal string | `std::string` |
+| `try_convert_string_to_numerics<T>(str)` | Safe string to number conversion | `Optional<T>` |
+| `is_numeric(str)` | Check if string is numeric | `bool` |
 
 ## Examples
 

@@ -22,6 +22,8 @@ zuc is a modern, header-only C++ library that provides fast, intuitive utilities
 - **Trimming** - `trim_left()`, `trim_right()`, `trim()` with view variants
 - **Content Checks** - `contains()`, `contains_any()`, `contains_all()`
 - **Replace/Remove** - In-place and copy variants for string manipulation
+- **Splitting/Joining** - `split()`, `split_by_any()`, `join()` for string manipulation
+- **Pattern Matching** - `match_any()` for checking against multiple patterns
 
 ### Container Utilities (`container_kits.hpp`)
 - **Content Checking** - `contains()`, `contains_any()`, `contains_if()` for element searching
@@ -54,6 +56,36 @@ zuc is a modern, header-only C++ library that provides fast, intuitive utilities
 - **Time Formatting** - Built-in time string formatting with various precision levels
 - **Sleep Functions** - Convenient thread sleeping with duration support
 
+### Random Generation (`random_kits.hpp`)
+- **Basic Random Numbers** - `random_int()`, `random_double()`, `random_long_long()`
+- **Sized Random Numbers** - `random_int32()`, `random_int64()` for specific bit widths
+- **Uniform Distribution** - Semantic aliases for uniform distribution functions
+- **Thread Safety** - Modern C++ random engine with proper seeding
+
+### Numerics Utilities (`numerics_kits.hpp`)
+- **Compile-time Type Selection** - `select_by_max_unsigned_t`, `select_by_range_t`, `select_by_value_t`
+- **Overflow-Checked Arithmetic** - `checked_add()`, `checked_sub()`, `checked_mul()`
+- **Platform Optimizations** - Uses compiler intrinsics for optimal performance
+- **Safe Numeric Operations** - Returns `std::optional` for error handling
+
+### RAII Utilities (`raii_kits.hpp`)
+- **Scope Guards** - `generate_scope_guard()` for automatic cleanup
+- **Success/Failure Guards** - Conditional execution based on exception state
+- **Resource Management** - Automatic cleanup with RAII patterns
+- **Dismissable Guards** - Control when cleanup actions execute
+
+### String Conversion (`string_converts.hpp`)
+- **Range to String** - `convert_range_to_string()` for containers
+- **Binary Data Handling** - `convert_to_bytes()` for object serialization
+- **Hexadecimal Conversion** - `convert_to_hex()` for binary representation
+- **Numeric Parsing** - `try_convert_string_to_numerics()` for safe number conversion
+
+### Common Concepts (`common_concepts.hpp`)
+- **Type Constraints** - `Stringable`, `OneOf`, `UnaryPred`, `BinaryPred`
+- **Callable Concepts** - `InvocableReturns` for function type requirements
+- **Range Concepts** - `RangeLike`, `RangeLikeElemTypeSpecified` for container constraints
+- **Compile-time Safety** - Type-safe template programming with concepts
+
 ## 🛠️ Quick Start
 
 ### Installation
@@ -65,13 +97,16 @@ zuc is a modern, header-only C++ library that provides fast, intuitive utilities
 
 ### Basic Usage
 ```cpp
-#include "string_kits.hpp"      // For string operations
-#include "io_kits.hpp"          // For file I/O
-#include "time_kits.hpp"        // For time utilities
-#include "span_kits.hpp"        // For span operations
-#include "random_kits.hpp"      // For random number generation
-#include "container_kits.hpp"   // For container operations
-#include "common_concepts.hpp"  // For common type concepts
+#include "string_kits.hpp"       // For string operations
+#include "io_kits.hpp"           // For file I/O
+#include "time_kits.hpp"         // For time utilities
+#include "span_kits.hpp"         // For span operations
+#include "random_kits.hpp"       // For random number generation
+#include "container_kits.hpp"    // For container operations
+#include "common_concepts.hpp"   // For common type concepts
+#include "numerics_kits.hpp"     // For safe numeric operations
+#include "raii_kits.hpp"         // For RAII utilities
+#include "string_converts.hpp"   // For string conversion
 
 using namespace zuc;
 
@@ -82,6 +117,19 @@ auto trimmed = trim(text);  // "Hello, World!"
 // Container operations
 std::vector<int> numbers = {1, 2, 3, 4, 5};
 bool found = contains(numbers, 3);  // true
+
+// Safe numeric operations
+auto sum = checked_add<int>(200, 55);  // Optional<int> containing 255
+if (sum) {
+    // Safe to use the result
+}
+
+// RAII scope guard
+{
+    FILE* file = fopen("data.txt", "r");
+    auto guard = generate_scope_guard([file]() { fclose(file); });
+    // File will be closed automatically
+}
 ```
 
 ### Building Tests
@@ -454,14 +502,16 @@ Tested and verified on:
 
 ## 📚 API Reference
 
-### Common Concepts
+### Common Concepts (`common_concepts.hpp`)
 - `Stringable<T>` - Types that can be converted to strings
 - `OneOf<T, Types...>` - Type constraint for allowed types
 - `UnaryPred<F, T>` - Unary predicate concept
 - `BinaryPred<F, T1, T2>` - Binary predicate concept
 - `InvocableReturns<F, ReturnType, Args...>` - Callable with specific return type
+- `RangeLike<R>` - Container has begin() and end()
+- `RangeLikeElemTypeSpecified<R, T>` - Range of specific element type
 
-### String Operations
+### String Operations (`string_kits.hpp`)
 - `slice()`, `prefix()`, `suffix()` - Zero-allocation substring operations
 - `trim()`, `trim_left()`, `trim_right()` - Whitespace removal
 - `split()`, `split_to_string()` - String splitting
@@ -471,20 +521,20 @@ Tested and verified on:
 - `repeat()` - String repetition
 - `match_any()` - Pattern matching
 
-### Span Operations
+### Span Operations (`span_kits.hpp`)
 - `sub_span_safe()` - Bounds-checked span slicing
 - `convert_span_to_vector()` - Span to vector conversion
 - `contains()`, `contains_any()` - Element searching
 - `find_subspan()` - Subspan location
 - `ConcatSpan<T, N>` - Multiple span concatenation
 
-### I/O Operations
+### I/O Operations (`io_kits.hpp`)
 - `FileMgr` - RAII file management class
 - `write_a_line_to_console()` - Formatted console output
 - `read_a_line_from_console()` - Interactive console input
 - `open_file()` - Safe file opening with error handling
 
-### Time Operations
+### Time Operations (`time_kits.hpp`)
 - `Timer` - Simple timing utility
 - `Stopwatch` - Pause/resume timing
 - `DateTime` - Date/time manipulation (requires full C++20 chrono)
@@ -492,12 +542,12 @@ Tested and verified on:
 - `sleep()` - Convenient sleeping
 - `format_duration()` - Time formatting
 
-### Random Operations
+### Random Operations (`random_kits.hpp`)
 - `random_int()`, `random_double()` - Basic random numbers
 - `random_int32()`, `random_int64()` - Sized integer random numbers
 - `uniform_random_*()` - Uniform distribution aliases
 
-### Container Operations
+### Container Operations (`container_kits.hpp`)
 - `contains()` - Check if container contains element
 - `contains_any()` - Check if container contains any of specified elements
 - `contains_if()` - Check if container contains element matching predicate
@@ -511,5 +561,26 @@ Tested and verified on:
 - `erase_if()` - Remove elements matching predicate
 - `merge()` - Merge two containers
 - `transform_all_to_vector()` - Transform container elements to vector
+
+### Numerics Operations (`numerics_kits.hpp`)
+- `checked_add<T>()` - Safe addition with overflow detection
+- `checked_sub<T>()` - Safe subtraction with underflow detection
+- `checked_mul<T>()` - Safe multiplication with overflow detection
+- `select_by_max_unsigned_t<MAX>` - Compile-time type selection by maximum value
+- `select_by_range_t<MIN, MAX>` - Compile-time type selection by range
+- `select_by_value_t<VALUE>` - Compile-time type selection by single value
+
+### RAII Operations (`raii_kits.hpp`)
+- `generate_scope_guard()` - Create cleanup action that runs on scope exit
+- `generate_scope_guard_success()` - Cleanup only if no exception thrown
+- `generate_scope_guard_failed()` - Cleanup only if exception thrown
+- `ScopeGuard::dismiss()` - Prevent cleanup action from running
+
+### String Conversion (`string_converts.hpp`)
+- `convert_range_to_string()` - Convert containers to string representation
+- `convert_to_bytes()` - Convert objects to byte spans
+- `convert_to_hex()` - Convert data to hexadecimal string
+- `try_convert_string_to_numerics<T>()` - Safe string to number conversion
+- `is_numeric()` - Check if string represents a number
 
 *"Built for convenience, designed for developers who value their time."*
