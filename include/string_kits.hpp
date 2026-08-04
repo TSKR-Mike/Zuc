@@ -547,11 +547,16 @@ inline std::string get_all_removed(std::string s,
  * @param times  How many times should the string repeat
  * @return std::string
  */
-inline std::string repeat(std::string& s, size_t times) {
+inline std::string repeat(const std::string& s, size_t times) {
     if (s.empty() || times == 0) {
         return "";
     }
-    return join(std::vector<std::string_view>(times, s));
+    std::string result;
+    result.reserve(s.size() * times);
+    for (size_t i = 0; i < times; ++i) {
+        result += s;
+    }
+    return result;
 }
 
 template <Stringable T>

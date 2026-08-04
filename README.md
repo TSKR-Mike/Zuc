@@ -29,7 +29,8 @@ zuc is a modern, header-only C++ library that provides fast, intuitive utilities
 - **Content Checking** - `contains()`, `contains_any()`, `contains_if()` for element searching
 - **Value Extraction** - `pop_back_value()`, `pop_front_value()` for safe element removal
 - **Map Operations** - `get_or_insert()`, `get_or_insert_default()`, `get_map_keys()`, `get_map_values()`
-- **Container Slicing** - `container_slice()` with step support for sub-container extraction
+- **Container Slicing** - `slice()` with step support for sub-container extraction
+- **Safe Access** - `at()`, `at_ref()` for safe element access with bounds checking
 - **Container Modification** - `erase_if()`, `merge()` for safe container manipulation
 - **Container Transformation** - `transform_all_to_vector()` for element mapping
 
@@ -60,6 +61,7 @@ zuc is a modern, header-only C++ library that provides fast, intuitive utilities
 - **Basic Random Numbers** - `random_int()`, `random_double()`, `random_long_long()`
 - **Sized Random Numbers** - `random_int32()`, `random_int64()` for specific bit widths
 - **Uniform Distribution** - Semantic aliases for uniform distribution functions
+- **Container Shuffling** - `shuffle()`, `shuffled()` for randomizing container order (random access only)
 - **Thread Safety** - Modern C++ random engine with proper seeding
 
 ### Numerics Utilities (`numerics_kits.hpp`)
@@ -117,6 +119,10 @@ auto trimmed = trim(text);  // "Hello, World!"
 // Container operations
 std::vector<int> numbers = {1, 2, 3, 4, 5};
 bool found = contains(numbers, 3);  // true
+
+// Random shuffling
+shuffle(numbers);  // Randomize the order
+auto shuffled_copy = shuffled(numbers);  // Get shuffled copy, original unchanged
 
 // Safe numeric operations
 auto sum = checked_add<int>(200, 55);  // Optional<int> containing 255
@@ -194,8 +200,8 @@ auto ages = get_map_values(user_ages); // {25, 30}
 
 // Container slicing with step support
 std::vector<int> data = {1, 2, 3, 4, 5, 6, 7, 8, 9};
-auto even_numbers = container_slice(data, 1, 9, 2);  // {2, 4, 6, 8}
-auto every_third = container_slice(data, 0, 9, 3);   // {1, 4, 7}
+auto even_numbers = slice(data, 1, 9, 2);  // {2, 4, 6, 8}
+auto every_third = slice(data, 0, 9, 3);   // {1, 4, 7}
 
 // Safe container modification
 std::vector<int> numbers = {1, 2, 3, 4, 5, 6};
@@ -546,6 +552,8 @@ Tested and verified on:
 - `random_int()`, `random_double()` - Basic random numbers
 - `random_int32()`, `random_int64()` - Sized integer random numbers
 - `uniform_random_*()` - Uniform distribution aliases
+- `shuffle()` - Shuffle container in place
+- `shuffled()` - Return shuffled copy of container
 
 ### Container Operations (`container_kits.hpp`)
 - `contains()` - Check if container contains element
@@ -557,7 +565,9 @@ Tested and verified on:
 - `get_or_insert_default()` - Get or insert with default value
 - `get_map_keys()` - Extract keys from map-like containers
 - `get_map_values()` - Extract values from map-like containers
-- `container_slice()` - Slice containers with step support
+- `slice()` - Slice containers with step support
+- `at()` - Safe element access returning optional
+- `at_ref()` - Safe element access returning reference (throws on error)
 - `erase_if()` - Remove elements matching predicate
 - `merge()` - Merge two containers
 - `transform_all_to_vector()` - Transform container elements to vector

@@ -3,13 +3,14 @@
  * @brief Time utilities and timing functions for C++20
  * @date 2026-07-30
  * @copyright Copyright (c) 2026
- * @note Provides Timer, Stopwatch, and DateTime classes for performance measurement,
- *       function benchmarking, and convenient time manipulation operations
+ * @note Provides Timer, Stopwatch, and DateTime classes for performance
+ * measurement, function benchmarking, and convenient time manipulation
+ * operations
  */
 
 #pragma once
-#include <chrono>
 #include <algorithm>
+#include <cassert>
 #include <chrono>
 #include <cstddef>
 #include <functional>
@@ -38,19 +39,20 @@ using micro_seconds_unit_type = duration<double, std::chrono::microseconds>;
 using milli_seconds_unit_type = duration<double, std::chrono::milliseconds>;
 using std::chrono::day, std::chrono::year, std::chrono::month;
 using std::chrono::days;
+using std::chrono::hh_mm_ss;
 using std::chrono::hours, std::chrono::minutes, std::chrono::seconds,
     std::chrono::microseconds;
 using std::chrono::local_days;
 using std::chrono::local_time;
 using std::chrono::sys_days;
 using std::chrono::year_month_day;
-using std::chrono::hh_mm_ss;
 
 /**
  * @class Timer
  * @brief Simple timer for measuring elapsed time
- * @note Uses steady_clock for monotonic time measurement that won't be affected by system clock changes.
- *       Supports start, reset, and elapsed time query operations.
+ * @note Uses steady_clock for monotonic time measurement that won't be affected
+ * by system clock changes. Supports start, reset, and elapsed time query
+ * operations.
  * @example
  * Timer timer;
  * timer.start();
@@ -76,7 +78,7 @@ class Timer {
         t_ = std::move(t.t_);
         return *this;
     }
-    
+
     /**
      * @brief Resets the timer to stopped state
      * @note Clears the start time and sets the timer to not running
@@ -94,7 +96,8 @@ class Timer {
 
     /**
      * @brief Gets the elapsed time since the timer was started
-     * @return std::optional<duration<double>> containing elapsed seconds, or nullopt if timer not started
+     * @return std::optional<duration<double>> containing elapsed seconds, or
+     * nullopt if timer not started
      * @note Returns the time elapsed since start() was called
      */
     std::optional<duration<double>> get_duration_seconds() {
@@ -119,8 +122,8 @@ class Timer {
 /**
  * @class Stopwatch
  * @brief Advanced stopwatch with pause/resume functionality
- * @note Extends Timer functionality with the ability to pause and resume timing.
- *       Useful for measuring cumulative time while excluding certain periods.
+ * @note Extends Timer functionality with the ability to pause and resume
+ * timing. Useful for measuring cumulative time while excluding certain periods.
  * @example
  * Stopwatch sw;
  * sw.start();
@@ -143,8 +146,8 @@ class Stopwatch {
 
     /**
      * @brief Starts or resumes the stopwatch
-     * @note If the stopwatch is not running, starts timing from the current moment.
-     *       If already running, this call has no effect.
+     * @note If the stopwatch is not running, starts timing from the current
+     * moment. If already running, this call has no effect.
      */
     void start() {
         if (!running_) {
@@ -175,9 +178,7 @@ class Stopwatch {
         paused_ = false;
     }
 
-    void stop() {
-        pause();
-    }
+    void stop() { pause(); }
 
     duration<double> get_elapsed() const {
         if (running_) {
@@ -224,7 +225,8 @@ struct TimingSetting {
     TimePrecision prec = TimePrecision::millisecond_precs;
 };
 
-const TimingSetting DEFAULT_TIMING_SETTING{true, true, true, true, 10, 2, TimePrecision::millisecond_precs};
+const TimingSetting DEFAULT_TIMING_SETTING{
+    true, true, true, true, 10, 2, TimePrecision::millisecond_precs};
 
 inline double convert_second_to_precision_value(
     std::chrono::duration<double> sec, TimePrecision prec) {
@@ -252,7 +254,7 @@ inline std::string get_prec_unit(TimePrecision prec) {
         case TimePrecision::millisecond_precs:
             return "ms";
         case TimePrecision::microsecond_precs:
-            return "mircos";
+            return "micros";
         default:
             return "s";
     }
@@ -272,13 +274,13 @@ inline std::string format_duration(std::chrono::duration<double> sec,
  * @param setting Configuration for timing behavior
  * @param f Function to benchmark (must be invocable with Args)
  * @param args Arguments to pass to the function
- * 
+ *
  * Runs the function multiple times and collects statistics including:
  * - Total time across all runs
  * - Maximum execution time
  * - Minimum execution time
  * - Average execution time
- * 
+ *
  * @example
  * void my_function() { // ... }
  * TimingSetting settings{.times_to_run = 5, .print_after_each_run = true};
@@ -344,7 +346,6 @@ inline void sleep(double secs) {
     std::this_thread::sleep_for(duration<double>(secs));
 }
 
-
 // To support LLVM19(chrono not fully implemented)
 #ifndef ZUC_DROP_CHRONO_TIME_ZONE
 class DateTime {
@@ -389,7 +390,9 @@ class DateTime {
                            month{static_cast<unsigned int>(month_v)},
                            day{static_cast<unsigned int>(day_v)}};
         if (!ymd.ok()) {
-            throw InvalidDateError("Invalid date" + std::format("{}-{}-{}", year_v, month_v, day_v));
+            throw InvalidDateError("Invalid date" + std::format("{}-{}-{}",
+                                                                year_v, month_v,
+                                                                day_v));
         }
         local_days curr_days = local_days{ymd};
         // Calculate hours, minutes, seconds, microseconds
@@ -438,7 +441,8 @@ class DateTime {
         using namespace std::chrono;
         // Convert local_time to system_clock to get UTC seconds since epoch
         auto sys_tp = current_zone()->to_sys(tp_);
-        auto total_duration = duration_cast<duration<double>>(sys_tp.time_since_epoch());
+        auto total_duration =
+            duration_cast<duration<double>>(sys_tp.time_since_epoch());
         return total_duration.count();
     }
     DateTime& operator+=(const Duration& delta) {
@@ -448,7 +452,7 @@ class DateTime {
     DateTime& operator-=(const Duration& delta) {
         tp_ -= delta;
         return *this;
-    }   
+    }
 
     DateTime operator+(const Duration& delta) const {
         return DateTime(tp_ + delta);
@@ -457,16 +461,15 @@ class DateTime {
         return DateTime(tp_ - delta);
     }
 
-    Duration operator-(const DateTime& other) const {
-        return tp_ - other.tp_;
-    }
+    Duration operator-(const DateTime& other) const { return tp_ - other.tp_; }
     DateTime offset_days(int days) const {
         return *this + std::chrono::days{days};
     }
 
-    std::string to_string() const{
-        return std::format("{}-{}-{} {}:{}:{}:{}", get_year(), get_month(), get_day(),
-                           get_hour(), get_minute(), get_second(), get_microsecond());
+    std::string to_string() const {
+        return std::format("{}-{}-{} {}:{}:{}:{}", get_year(), get_month(),
+                           get_day(), get_hour(), get_minute(), get_second(),
+                           get_microsecond());
     }
 
    protected:
@@ -475,5 +478,115 @@ class DateTime {
     explicit DateTime(TimePoint t) : tp_(t) {}
 };
 #endif
+
+class CountDownTimer {
+    using Duration = std::chrono::duration<double>;  // in seconds
+    using Clock = std::chrono::steady_clock;
+    using TimePoint = Clock::time_point;
+
+   public:
+    explicit CountDownTimer(double time_left)
+        : total_duration_(Duration(time_left)),
+          time_passed_before_pause_(Duration::zero()),
+          started_(false),
+          paused_(false) {
+        assert(time_left >= 0);
+    }
+    ~CountDownTimer() = default;
+    Duration get_total_count_down_time() const { return total_duration_; }
+    void start() {
+        if (!started_) {
+            start_time_ = Clock::now();
+            started_ = true;
+            return;
+        }
+        if (!paused_) {
+            restart();
+            return;
+        }
+        if (paused_) {
+            resume();
+            return;
+        }
+    }
+    std::optional<double> get_remaining_time() const {
+        if (!started_) {
+            return std::nullopt;
+        }
+        if (paused_) {
+            return total_duration_.count() - time_passed_before_pause_.count();
+        }
+        auto elapsed = Clock::now() - start_time_;
+        auto remaining = total_duration_ - elapsed - time_passed_before_pause_;
+        if (remaining.count() <= 0) {
+            return 0.0;
+        } else {
+            return remaining.count();
+        }
+    }
+
+    std::optional<bool> is_finished() const {
+        if (!started_) {
+            return std::nullopt;
+        } else {
+            if (get_remaining_time().value() <= 0) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+    }
+
+    void pause() {
+        if (started_ && !paused_) {
+            time_passed_before_pause_ += Clock::now() - start_time_;
+            paused_ = true;
+        }
+    }
+
+    void resume() {
+        if (paused_) {
+            start_time_ = Clock::now();
+            paused_ = false;
+        }
+    }
+
+    void restart() {
+        start_time_ = Clock::now();
+        time_passed_before_pause_ = Duration(0);
+        paused_ = false;
+        started_ = true;
+    }
+
+    void reset(double t) {
+        assert(t >= 0);
+        total_duration_ = Duration(t);
+        time_passed_before_pause_ = Duration(0);
+        started_ = false;
+        paused_ = false;
+    }
+    std::optional<Duration> get_remaining_duration() const {
+        if (!started_) return std::nullopt;
+
+        Duration remaining;
+        if (paused_) {
+            remaining = total_duration_ - time_passed_before_pause_;
+        } else {
+            auto elapsed = Clock::now() - start_time_;
+            remaining = total_duration_ - elapsed - time_passed_before_pause_;
+        }  // Protect the result to be positive or 0
+        if (remaining < Duration::zero()) remaining = Duration::zero();
+        return remaining;
+    }
+
+   protected:
+   private:
+    Duration total_duration_;            // in seconds
+    Duration time_passed_before_pause_;  // saves the passed duration,
+                                         // supporting the pause/resume
+    TimePoint start_time_;
+    bool started_ = false;
+    bool paused_ = false;
+};
 
 }  // namespace zuc

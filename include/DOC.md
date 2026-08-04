@@ -422,6 +422,23 @@ auto uniform_int = uniform_random_int(1, 100);
 auto uniform_double = uniform_random_double(0.0, 1.0);
 ```
 
+#### Container Shuffling
+
+```cpp
+// Shuffle container in place using default engine
+std::vector<int> numbers = {1, 2, 3, 4, 5};
+shuffle(numbers);  // numbers is now randomly ordered
+
+// Shuffle with custom engine
+std::mt19937 custom_engine(42);
+shuffle(numbers, custom_engine);
+
+// Get shuffled copy (original unchanged)
+auto shuffled_copy = shuffled(numbers);  // new vector with shuffled order
+```
+
+**Note:** `shuffle()` and `shuffled()` only work with containers that support random access iterators (e.g., `std::vector`, `std::deque`, `std::array`). They do not work with `std::list` or other containers with only bidirectional iterators.
+
 ### Container Utilities (`container_kits.hpp`)
 
 Container utilities provide safe operations on standard containers.
@@ -472,7 +489,7 @@ std::unordered_set<int> values = get_map_values(map);
 
 ```cpp
 std::vector<int> data = {1, 2, 3, 4, 5, 6, 7, 8, 9};
-auto slice = container_slice(data, 2, 7, 2);  // {3, 5, 7}
+auto slice = slice(data, 2, 7, 2);  // {3, 5, 7}
 ```
 
 #### Container Modification
@@ -805,6 +822,9 @@ auto str = convert_range_to_string(map);  // "{a: 1, b: 2}"
 | `random_int64(min, max)` | Random 64-bit integer | `int64_t` |
 | `uniform_random_int(min, max)` | Uniform random integer | `int` |
 | `uniform_random_double(min, max)` | Uniform random double | `double` |
+| `shuffle(container)` | Shuffle container in place | `void` |
+| `shuffle(container, engine)` | Shuffle with custom engine | `void` |
+| `shuffled(container)` | Return shuffled copy | `Container` |
 
 ### Container Functions (`container_kits.hpp`)
 
@@ -819,7 +839,7 @@ auto str = convert_range_to_string(map);  // "{a: 1, b: 2}"
 | `get_or_insert_default(map, key, default)` | Get or insert with default | `T&` |
 | `get_map_keys(map)` | Extract keys from map | `unordered_set<Key>` |
 | `get_map_values(map)` | Extract values from map | `unordered_set<Value>` |
-| `container_slice(c, start, end, step)` | Slice container with step | `vector<T>` |
+| `slice(c, start, end, step)` | Slice container with step | `vector<T>` |
 | `erase_if(container, pred)` | Remove elements matching predicate | `void` |
 | `merge(a, b)` | Merge two containers | `vector<T>` |
 | `transform_all_to_vector<T>(c, f)` | Transform elements | `vector<T>` |

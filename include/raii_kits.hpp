@@ -131,7 +131,7 @@ class ScopeGuardSuccess {
    private:
     Func func_;
     bool is_active_ = true;
-    size_t uncaught_count_=0;
+    size_t uncaught_count_;
 };
 
 /**
@@ -192,7 +192,7 @@ class ScopeGuardFailed {
    private:
     Func func_;
     bool is_active_ = true;
-    size_t uncaught_count_=0;
+    size_t uncaught_count_;
 };
 
 /**

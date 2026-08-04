@@ -26,9 +26,8 @@ namespace zuc {
  */
 template <typename T>
 concept Stringable = std::constructible_from<std::string, T> ||
-                     (std::integral<T> || std::floating_point<T>) &&
-                     requires(T&& v) { std::to_string(std::forward<T>(v)); };
-
+                     ((std::integral<T> || std::floating_point<T>) &&
+                      requires(T&& v) { std::to_string(std::forward<T>(v)); });
 /**
  * @concept OneOf
  * @brief Concept that checks if a type T is one of the specified Types
@@ -129,6 +128,7 @@ template <typename T>
 concept RangeLike = requires(T& t) {
     std::begin(t);
     std::end(t);
+    std::size(t);
 };
 
 template <typename T, typename ValueType>
@@ -144,6 +144,7 @@ template <typename Range>
 using get_rangelike_value_type =
     std::remove_cv_t<typename std::iterator_traits<decltype(std::begin(
         std::declval<Range&>()))>::value_type>;
+
 // Map like containers
 template <typename T>
 struct is_map_like : std::false_type {};
@@ -200,5 +201,29 @@ concept Insertable =
 
 template <typename T>
 concept NumericType = std::integral<T> || std::floating_point<T>;
+
+template <typename From, typename To>
+concept CastableTo = requires(From&& from) {
+    { static_cast<To>(std::forward<From>(from)) };
+};
+
+template <typename From, typename To>
+    requires CastableTo<From, To>
+constexpr decltype(auto) optimal_cast(From&& from) noexcept(
+    noexcept(static_cast<To>(std::forward<From>(from)))) {
+    return static_cast<To>(std::forward<From>(from));
+}
+
+template <typename T, typename U>
+concept DirectComparable =
+    requires(T&& t, U&& u) { std::same_as<decltype(t == u), bool>; };
+
+template <typename T, typename U>
+concept ExplicitConvertedComparable =
+    requires { CastableTo<T, U> || CastableTo<U, T>; };
+
+template <typename T, typename U>
+concept Comparable =
+    requires { DirectComparable<T, U> || ExplicitConvertedComparable<T, U>; };
 
 }  // namespace zuc

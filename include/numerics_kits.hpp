@@ -3,13 +3,14 @@
  * @brief Safe numeric operations and type selection utilities for C++20
  * @date 2026-07-30
  * @copyright Copyright (c) 2026
- * @note Provides overflow-checked arithmetic operations and compile-time type selection
- *       based on value ranges and maximum values
+ * @note Provides overflow-checked arithmetic operations and compile-time type
+ * selection based on value ranges and maximum values
  */
 
 #pragma once
+#include <limits>
 #include <optional>
-
+#include <cmath>
 
 namespace zuc {
 
@@ -17,8 +18,8 @@ namespace zuc {
  * @struct select_by_max_unsigned
  * @brief Compile-time type selector based on maximum unsigned value
  * @tparam Value The maximum value the type needs to hold
- * @note Selects the smallest unsigned integer type that can hold the specified value
- *       Selection order: uint8_t → uint16_t → uint32_t → uint64_t
+ * @note Selects the smallest unsigned integer type that can hold the specified
+ * value Selection order: uint8_t → uint16_t → uint32_t → uint64_t
  * @example
  * using Type1 = select_by_max_unsigned_t<255>;   // uint8_t
  * using Type2 = select_by_max_unsigned_t<256>;   // uint16_t
@@ -44,9 +45,9 @@ using select_by_max_unsigned_t = typename select_by_max_unsigned<Value>::type;
  * @brief Compile-time type selector based on value range
  * @tparam Min Minimum value the type needs to hold
  * @tparam Max Maximum value the type needs to hold
- * @note Selects the smallest integer type (signed or unsigned) that can hold the specified range
- *       For signed ranges: checks both Min and Max bounds
- *       For unsigned ranges: only checks Max bound (Min is assumed to be >= 0)
+ * @note Selects the smallest integer type (signed or unsigned) that can hold
+ * the specified range For signed ranges: checks both Min and Max bounds For
+ * unsigned ranges: only checks Max bound (Min is assumed to be >= 0)
  * @example
  * using SignedType = select_by_range_t<-100, 100>;    // int8_t
  * using UnsignedType = select_by_range_t<0, 255>;     // uint8_t
@@ -82,8 +83,6 @@ using select_by_value_t = typename select_by_range<Value, Value>::type;
 #include <intrin.h>
 #endif
 
-namespace numerics {
-
 /**
  * @concept is_64bit
  * @brief Concept that identifies 64-bit integer types
@@ -101,10 +100,11 @@ concept is_64bit = std::is_same_v<T, int64_t> || std::is_same_v<T, uint64_t>;
  * @brief Performs overflow-checked addition
  * @tparam T Integral type for the operation
  * @param v1 First operand
- * @param v2 Second operand  
+ * @param v2 Second operand
  * @return std::optional<T> containing the result, or nullopt if overflow occurs
- * @note Uses compiler intrinsics when available (_addcarry_u64 for MSVC, __builtin_add_overflow for GCC/Clang)
- *       For smaller types, promotes to larger types for safe calculation
+ * @note Uses compiler intrinsics when available (_addcarry_u64 for MSVC,
+ * __builtin_add_overflow for GCC/Clang) For smaller types, promotes to larger
+ * types for safe calculation
  * @example
  * auto result1 = checked_add<uint8_t>(200, 50);  // nullopt (overflow)
  * auto result2 = checked_add<uint8_t>(200, 55);  // 255
@@ -161,9 +161,9 @@ std::optional<T> checked_add(T v1, T v2) {
  * @param v1 First operand (minuend)
  * @param v2 Second operand (subtrahend)
  * @return std::optional<T> containing the result, or nullopt if overflow occurs
- * @note Uses compiler intrinsics when available (_subborrow_u64 for MSVC, __builtin_sub_overflow for GCC/Clang)
- *       For unsigned types, returns nullopt if v1 < v2
- *       For smaller types, promotes to larger types for safe calculation
+ * @note Uses compiler intrinsics when available (_subborrow_u64 for MSVC,
+ * __builtin_sub_overflow for GCC/Clang) For unsigned types, returns nullopt if
+ * v1 < v2 For smaller types, promotes to larger types for safe calculation
  * @example
  * auto result1 = checked_sub<uint8_t>(100, 150); // nullopt (underflow)
  * auto result2 = checked_sub<uint8_t>(200, 50);  // 150
@@ -216,13 +216,14 @@ std::optional<T> checked_sub(T v1, T v2) {
  * @param v1 First operand
  * @param v2 Second operand
  * @return std::optional<T> containing the result, or nullopt if overflow occurs
- * @note Uses compiler intrinsics when available (_umul128 for MSVC, __builtin_mul_overflow for GCC/Clang)
- *       For signed multiplication, performs comprehensive overflow checking across all sign combinations
- *       For smaller types, promotes to larger types for safe calculation
+ * @note Uses compiler intrinsics when available (_umul128 for MSVC,
+ * __builtin_mul_overflow for GCC/Clang) For signed multiplication, performs
+ * comprehensive overflow checking across all sign combinations For smaller
+ * types, promotes to larger types for safe calculation
  * @example
- * auto result1 = checked_mul<uint8_t>(100, 3);   // nullopt (overflow: 300 > 255)
- * auto result2 = checked_mul<uint8_t>(50, 4);    // 200
- * auto result3 = checked_mul<int>(-100, 2);     // -200
+ * auto result1 = checked_mul<uint8_t>(100, 3);   // nullopt (overflow: 300 >
+ * 255) auto result2 = checked_mul<uint8_t>(50, 4);    // 200 auto result3 =
+ * checked_mul<int>(-100, 2);     // -200
  */
 template <typename T>
     requires std::integral<T>
@@ -247,13 +248,17 @@ std::optional<T> checked_mul(T v1, T v2) {
             // Check for overflow in multiplication
             if (v1 == 0 || v2 == 0) return 0;
             if (v1 > 0 && v2 > 0) {
-                if (v1 > std::numeric_limits<T>::max() / v2) return std::nullopt;
+                if (v1 > std::numeric_limits<T>::max() / v2)
+                    return std::nullopt;
             } else if (v1 < 0 && v2 < 0) {
-                if (v1 < std::numeric_limits<T>::max() / v2) return std::nullopt;
+                if (v1 < std::numeric_limits<T>::max() / v2)
+                    return std::nullopt;
             } else if (v1 > 0 && v2 < 0) {
-                if (v2 < std::numeric_limits<T>::min() / v1) return std::nullopt;
+                if (v2 < std::numeric_limits<T>::min() / v1)
+                    return std::nullopt;
             } else if (v1 < 0 && v2 > 0) {
-                if (v1 < std::numeric_limits<T>::min() / v2) return std::nullopt;
+                if (v1 < std::numeric_limits<T>::min() / v2)
+                    return std::nullopt;
             }
             return v1 * v2;
         } else {
@@ -274,6 +279,61 @@ std::optional<T> checked_mul(T v1, T v2) {
     return result;
 #endif
 }
-}  // namespace numerics
+
+template <typename To, typename From>
+    requires(std::integral<To> || std::floating_point<To>) &&
+            (std::integral<From> || std::floating_point<From>)
+constexpr To saturate_cast(From value) noexcept {
+    // Use static_cast for integral types, it's safe and fast
+    if constexpr (std::is_integral_v<From> && std::is_integral_v<To>) {
+        // integral → integral: never overflow, just saturate
+        constexpr To min = std::numeric_limits<To>::min();
+        constexpr To max = std::numeric_limits<To>::max();
+        if (value < min) return min;
+        if (value > max) return max;
+        return static_cast<To>(value);
+    }
+    // Use static_cast for floating-point types, it's safe and fast
+    else if constexpr (std::is_floating_point_v<From> &&
+                       std::is_integral_v<To>) {
+        // floating → integral
+        constexpr To min = std::numeric_limits<To>::min();
+        constexpr To max = std::numeric_limits<To>::max();
+        // deal NaN and inf
+        if (isnan(value)) {
+            // NaN → integral: return 0
+            return To{0};
+        }
+        // inf → integral: return max or min
+        if (isinf(value)) {
+            return value > 0 ? max : min;
+        }
+        // floating → integral: saturate
+        if (value < static_cast<From>(min)) return min;
+        if (value > static_cast<From>(max)) return max;
+        return static_cast<To>(value);
+    } else if constexpr (std::is_integral_v<From> &&
+                         std::is_floating_point_v<To>) {
+        // integral → floating: never overflow, just saturate
+        return static_cast<To>(value);
+    } else {  // floating → floating
+        // floating → floating: never overflow, just saturate
+        constexpr To min = std::numeric_limits<To>::min();
+        constexpr To max = std::numeric_limits<To>::max();
+        if (isinf(value)) {
+            return value > 0 ? max : min;
+        }
+        if (isnan(value)) {
+            // NaN → floating: return 0
+            if constexpr (std::numeric_limits<To>::has_quiet_NaN)
+                return std::numeric_limits<To>::quiet_NaN();
+            else
+                return To{0};
+        }
+        if (value < static_cast<From>(min)) return min;
+        if (value > static_cast<From>(max)) return max;
+        return static_cast<To>(value);
+    }
+}
 
 }  // namespace zuc

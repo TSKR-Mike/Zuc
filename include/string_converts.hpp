@@ -184,7 +184,7 @@ inline std::span<const std::byte> convert_to_bytes(std::string_view s) {
  * // bytes points to the memory representation of the string
  */
 inline std::span<const std::byte> convert_to_bytes(const std::string& s) {
-    return convert_to_bytes(s);
+    return convert_to_bytes(std::string_view(s));
 }
 
 /**
@@ -267,7 +267,7 @@ inline std::string convert_to_hex(std::string_view sv) {
  * std::string text = "Hi";
  * std::string hex = convert_to_hex(text); // "4869" (ASCII for 'H' and 'i')
  */
-inline std::string convert_to_hex(std::string sv) {
+inline std::string convert_to_hex(const std::string& sv) {
     return convert_to_hex(convert_to_bytes(sv));
 }
 

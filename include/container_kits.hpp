@@ -3,8 +3,9 @@
  * @brief Container utilities and operations for C++20
  * @date 2026-07-30
  * @copyright Copyright (c) 2026
- * @note Provides generic container operations including element search, safe removal,
- *       map operations, and container slicing. Works with any range-like container.
+ * @note Provides generic container operations including element search, safe
+ * removal, map operations, and container slicing. Works with any range-like
+ * container.
  */
 
 #pragma once
@@ -13,6 +14,7 @@
 #include <array>
 #include <cassert>
 #include <concepts>
+#include <cstddef>
 #include <cstring>
 #include <deque>
 #include <iterator>
@@ -27,6 +29,7 @@
 #include <vector>
 
 #include "common_concepts.hpp"
+#include "random_kits.hpp"
 
 namespace zuc {
 
@@ -37,8 +40,8 @@ namespace zuc {
  * @param obj The range to search in
  * @param contain_obj The element to look for
  * @return true if the element is found, false otherwise
- * @note Performs a linear search using std::find. Works with any range-like container.
- *       Returns false for empty ranges.
+ * @note Performs a linear search using std::find. Works with any range-like
+ * container. Returns false for empty ranges.
  * @example
  * std::vector<int> vec = {1, 2, 3, 4, 5};
  * bool found = contains(vec, 3); // true
@@ -60,8 +63,10 @@ constexpr bool contains(const Range& obj, const U& contain_obj) {
  * @tparam Range2 Type of the range containing elements to search for
  * @param obj The range to search in
  * @param contain_objs Range of elements to look for
- * @return true if any element from contain_objs is found in obj, false otherwise
- * @note Returns false if either range is empty. Performs linear search for each element.
+ * @return true if any element from contain_objs is found in obj, false
+ * otherwise
+ * @note Returns false if either range is empty. Performs linear search for each
+ * element.
  * @example
  * std::vector<int> vec = {1, 2, 3, 4, 5};
  * std::array<int, 3> search = {2, 6, 8};
@@ -86,7 +91,8 @@ constexpr bool contains_any(const Range1& obj, const Range2& contain_objs) {
  * @param obj The range to search in
  * @param pred Unary predicate function to test each element
  * @return true if any element satisfies the predicate, false otherwise
- * @note Returns false for empty ranges. Uses std::find_if for efficient searching.
+ * @note Returns false for empty ranges. Uses std::find_if for efficient
+ * searching.
  * @example
  * std::vector<int> vec = {1, 2, 3, 4, 5};
  * bool has_even = contains_if(vec, [](int x) { return x % 2 == 0; }); // true
@@ -104,8 +110,10 @@ constexpr bool contains_if(const Range& obj, UnaryPred<ElemType> auto pred) {
  * @brief Safely removes and returns the last element from a vector
  * @tparam T Type of elements in the vector
  * @param vec The vector to pop from
- * @return std::optional<T> containing the removed element, or nullopt if vector is empty
- * @note Uses move semantics for efficient element extraction. Returns empty optional for empty vectors.
+ * @return std::optional<T> containing the removed element, or nullopt if vector
+ * is empty
+ * @note Uses move semantics for efficient element extraction. Returns empty
+ * optional for empty vectors.
  * @example
  * std::vector<int> vec = {1, 2, 3};
  * auto result = pop_back_value(vec); // 3, vec is now {1, 2}
@@ -128,10 +136,11 @@ std::optional<T> pop_back_value(std::vector<T>& vec) {
  * @tparam Args Types of arguments for value construction
  * @param map The unordered_map to operate on
  * @param key The key to look up or insert
- * @param args Arguments to forward to ValueType constructor if insertion is needed
+ * @param args Arguments to forward to ValueType constructor if insertion is
+ * needed
  * @return Reference to the value associated with the key
- * @note Uses try_emplace for efficient insertion that only constructs value if needed.
- *       Perfect forwards arguments to the value constructor.
+ * @note Uses try_emplace for efficient insertion that only constructs value if
+ * needed. Perfect forwards arguments to the value constructor.
  * @example
  * std::unordered_map<std::string, std::string> map;
  * auto& value = get_or_insert(map, "key", "default_value");
@@ -174,9 +183,10 @@ ValueType& get_or_insert_default(std::unordered_map<KeyType, ValueType>& map,
 }
 
 template <typename Range, typename ElemType = get_rangelike_value_type<Range>>
-    requires RangeLike<Range> && IsNotOneOf<Range, std::string, std::string_view>
-constexpr std::vector<ElemType> container_slice(const Range& obj, size_t start,
-                                                size_t end, size_t step = 1) {
+    requires RangeLike<Range> &&
+             IsNotOneOf<Range, std::string, std::string_view>
+constexpr std::vector<ElemType> slice(const Range& obj, size_t start,
+                                      size_t end, size_t step = 1) {
     size_t total_size = std::size(obj);
     if (total_size == 0) {
         return {};
@@ -225,9 +235,8 @@ constexpr void erase_if(Range& obj, UnaryPred<ElemType> auto pred) {
 template <typename TransformType, typename Range, typename F,
           typename ElemType = get_rangelike_value_type<Range>>
     requires InvocableReturns<F, TransformType, ElemType> && RangeLike<Range>
-constexpr std::vector<TransformType> transform_all_to_vector(
-    const Range& range,
-    F transform_func) {
+constexpr std::vector<TransformType> transform_all_to_vector(const Range& range,
+                                                             F transform_func) {
     if (std::size(range) == 0) {
         return {};
     }
@@ -286,6 +295,89 @@ std::decay_t<Range> merge(const Range& r1, const Range& r2) {
         result.insert(std::end(result), it);
     }
     return result;
+}
+template <typename Range, typename ElemType = get_rangelike_value_type<Range>>
+    requires RangeLike<Range>
+std::optional<ElemType> at(Range& r, size_t index) {
+    size_t s = std::size(r);
+    if (index >= s) {
+        return std::nullopt;
+    }
+    auto it = std::begin(r);
+    std::advance(it, index);
+    return *it;
+}
+
+template <typename Range, typename ElemType = get_rangelike_value_type<Range>>
+    requires RangeLike<Range>
+std::optional<const ElemType> at(const Range& r, size_t index) {
+    size_t s = std::size(r);
+    if (index >= s) {
+        return std::nullopt;
+    }
+    auto it = std::begin(r);
+    std::advance(it, index);
+    return *it;
+}
+
+template <typename Range, typename ElemType = get_rangelike_value_type<Range>>
+    requires RangeLike<Range>
+ElemType& at_ref(Range& r, size_t index) {
+    size_t s = std::size(r);
+    if (index >= s) {
+        throw std::out_of_range("at_ref: index out of range");
+    }
+    auto it = std::begin(r);
+    std::advance(it, index);
+    return *it;
+}
+
+template <typename Range, typename ElemType = get_rangelike_value_type<Range>>
+    requires RangeLike<Range>
+const ElemType& at_ref(const Range& r, size_t index) {
+    size_t s = std::size(r);
+    if (index >= s) {
+        throw std::out_of_range("at_ref: index out of range");
+    }
+    auto it = std::begin(r);
+    std::advance(it, index);
+    return *it;
+}
+
+template <typename Range, typename ElemType = get_rangelike_value_type<Range>>
+    requires RangeLike<Range>
+std::optional<const ElemType&> choice(const Range& r) {
+    size_t s = std::size(r);
+    if (s == 0) {
+        return std::nullopt;
+    } else {
+        size_t index = random_int(0, s - 1);
+        return at(r, index);
+    }
+}
+
+template <typename Range, typename TargetType,
+          typename ElemType = get_rangelike_value_type<Range>>
+    requires RangeLike<Range> && DirectComparable<TargetType, ElemType>
+std::optional<ElemType&> find(Range& r, TargetType target) {
+    auto it = std::find(std::begin(r), std::end(r), target);
+    if (it == std::end(r)) {
+        return std::nullopt;
+    }
+    return *it;
+}
+
+template <typename Range, typename TargetType,
+          typename ElemType = get_rangelike_value_type<Range>>
+    requires RangeLike<Range> &&
+             ExplicitConvertedComparable<TargetType, ElemType>
+std::optional<ElemType&> find(Range& r, TargetType target) {
+    auto it = std::find(std::begin(r), std::end(r),
+                        optimal_cast<TargetType, ElemType>(target));
+    if (it == std::end(r)) {
+        return std::nullopt;
+    }
+    return *it;
 }
 
 }  // namespace zuc

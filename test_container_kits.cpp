@@ -325,7 +325,7 @@ TEST_SUITE("Get Or Insert Operations") {
 TEST_SUITE("Container Slice Operations") {
     TEST_CASE("container_slice basic") {
         std::vector<int> vec = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-        auto sliced = container_slice(vec, 2, 5);
+        auto sliced = slice(vec, 2, 5);
         CHECK(sliced.size() == 3);
         CHECK(sliced[0] == 3);
         CHECK(sliced[1] == 4);
@@ -334,7 +334,7 @@ TEST_SUITE("Container Slice Operations") {
 
     TEST_CASE("container_slice with step") {
         std::vector<int> vec = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-        auto sliced = container_slice(vec, 0, 10, 2);
+        auto sliced = slice(vec, 0, 10, 2);
         CHECK(sliced.size() == 5);
         CHECK(sliced[0] == 1);
         CHECK(sliced[1] == 3);
@@ -345,7 +345,7 @@ TEST_SUITE("Container Slice Operations") {
 
     TEST_CASE("container_slice from beginning") {
         std::vector<int> vec = {1, 2, 3, 4, 5};
-        auto sliced = container_slice(vec, 0, 3);
+        auto sliced = slice(vec, 0, 3);
         CHECK(sliced.size() == 3);
         CHECK(sliced[0] == 1);
         CHECK(sliced[1] == 2);
@@ -354,7 +354,7 @@ TEST_SUITE("Container Slice Operations") {
 
     TEST_CASE("container_slice to end") {
         std::vector<int> vec = {1, 2, 3, 4, 5};
-        auto sliced = container_slice(vec, 2, 5);
+        auto sliced = slice(vec, 2, 5);
         CHECK(sliced.size() == 3);
         CHECK(sliced[0] == 3);
         CHECK(sliced[1] == 4);
@@ -363,19 +363,19 @@ TEST_SUITE("Container Slice Operations") {
 
     TEST_CASE("container_slice empty result") {
         std::vector<int> vec = {1, 2, 3, 4, 5};
-        auto sliced = container_slice(vec, 3, 3);
+        auto sliced = slice(vec, 3, 3);
         CHECK(sliced.empty());
     }
 
     TEST_CASE("container_slice step larger than range") {
         std::vector<int> vec = {1, 2, 3, 4, 5};
-        auto sliced = container_slice(vec, 0, 5, 10);
+        auto sliced = slice(vec, 0, 5, 10);
         CHECK(sliced.empty());
     }
 
     TEST_CASE("container_slice with array") {
         std::array<int, 10> arr = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-        auto sliced = container_slice(arr, 1, 4);
+        auto sliced = slice(arr, 1, 4);
         CHECK(sliced.size() == 3);
         CHECK(sliced[0] == 2);
         CHECK(sliced[1] == 3);
@@ -384,7 +384,7 @@ TEST_SUITE("Container Slice Operations") {
 
     TEST_CASE("container_slice with strings") {
         std::vector<std::string> vec = {"a", "b", "c", "d", "e"};
-        auto sliced = container_slice(vec, 1, 4);
+        auto sliced = slice(vec, 1, 4);
         CHECK(sliced.size() == 3);
         CHECK(sliced[0] == "b");
         CHECK(sliced[1] == "c");
@@ -691,7 +691,7 @@ TEST_SUITE("Container Edge Cases") {
         CHECK(contains(vec, 42) == true);
         CHECK(contains(vec, 0) == false);
         
-        auto sliced = container_slice(vec, 0, 1);
+        auto sliced = slice(vec, 0, 1);
         CHECK(sliced.size() == 1);
         CHECK(sliced[0] == 42);
         
@@ -709,7 +709,7 @@ TEST_SUITE("Container Edge Cases") {
         CHECK(contains(vec, 500) == true);
         CHECK(contains(vec, 1000) == false);
         
-        auto sliced = container_slice(vec, 100, 200);
+        auto sliced = slice(vec, 100, 200);
         CHECK(sliced.size() == 100);
         CHECK(sliced[0] == 100);
         CHECK(sliced[99] == 199);
@@ -718,15 +718,15 @@ TEST_SUITE("Container Edge Cases") {
     TEST_CASE("container_slice boundary conditions") {
         std::vector<int> vec = {1, 2, 3, 4, 5};
         
-        auto start_slice = container_slice(vec, 0, 1);
+        auto start_slice = slice(vec, 0, 1);
         CHECK(start_slice.size() == 1);
         CHECK(start_slice[0] == 1);
         
-        auto end_slice = container_slice(vec, 4, 5);
+        auto end_slice = slice(vec, 4, 5);
         CHECK(end_slice.size() == 1);
         CHECK(end_slice[0] == 5);
         
-        auto empty_slice = container_slice(vec, 2, 2);
+        auto empty_slice = slice(vec, 2, 2);
         CHECK(empty_slice.empty());
     }
 
@@ -751,6 +751,117 @@ TEST_SUITE("Container Edge Cases") {
         // This should work with appropriate type conversion
         auto merged = merge(vec1, vec1); // Same type merge
         CHECK(merged.size() == 4);
+    }
+}
+
+/**
+ * @test At Operations
+ * Tests for safe element access with bounds checking.
+ */
+TEST_SUITE("At Operations") {
+    TEST_CASE("at valid index") {
+        std::vector<int> vec = {1, 2, 3, 4, 5};
+        auto result = at(vec, 2);
+        CHECK(result.has_value());
+        CHECK(result.value() == 3);
+    }
+
+    TEST_CASE("at index out of bounds") {
+        std::vector<int> vec = {1, 2, 3};
+        auto result = at(vec, 5);
+        CHECK(!result.has_value());
+    }
+
+    TEST_CASE("at with empty container") {
+        std::vector<int> empty_vec;
+        auto result = at(empty_vec, 0);
+        CHECK(!result.has_value());
+    }
+
+    TEST_CASE("at at boundary") {
+        std::vector<int> vec = {10, 20, 30};
+        
+        auto first = at(vec, 0);
+        CHECK(first.has_value());
+        CHECK(first.value() == 10);
+        
+        auto last = at(vec, 2);
+        CHECK(last.has_value());
+        CHECK(last.value() == 30);
+        
+        auto out_of_bounds = at(vec, 3);
+        CHECK(!out_of_bounds.has_value());
+    }
+
+    TEST_CASE("at with array") {
+        std::array<int, 4> arr = {1, 2, 3, 4};
+        auto result = at(arr, 2);
+        CHECK(result.has_value());
+        CHECK(result.value() == 3);
+    }
+
+    TEST_CASE("at with string") {
+        std::string str = "hello";
+        auto result = at(str, 1);
+        CHECK(result.has_value());
+        CHECK(result.value() == 'e');
+    }
+
+    TEST_CASE("at const reference") {
+        const std::vector<int> vec = {1, 2, 3};
+        auto result = at(vec, 1);
+        CHECK(result.has_value());
+        CHECK(result.value() == 2);
+    }
+
+    TEST_CASE("at with large index") {
+        std::vector<int> vec = {1, 2, 3};
+        auto result = at(vec, SIZE_MAX);
+        CHECK(!result.has_value());
+    }
+
+    TEST_CASE("at_ref valid index") {
+        std::vector<int> vec = {1, 2, 3, 4, 5};
+        auto& ref = at_ref(vec, 2);
+        CHECK(ref == 3);
+        
+        // Modify through reference
+        ref = 100;
+        CHECK(vec[2] == 100);
+    }
+
+    TEST_CASE("at_ref out of range throws") {
+        std::vector<int> vec = {1, 2, 3};
+        CHECK_THROWS_AS(at_ref(vec, 5), std::out_of_range);
+        CHECK_THROWS_AS(at_ref(vec, 10), std::out_of_range);
+    }
+
+    TEST_CASE("at_ref with const container") {
+        const std::vector<int> vec = {1, 2, 3, 4, 5};
+        const auto& ref = at_ref(vec, 3);
+        CHECK(ref == 4);
+    }
+
+    TEST_CASE("at_ref with array") {
+        std::array<int, 4> arr = {10, 20, 30, 40};
+        auto& ref = at_ref(arr, 1);
+        CHECK(ref == 20);
+    }
+
+    TEST_CASE("at_ref with string") {
+        std::string str = "hello";
+        auto& ref = at_ref(str, 1);
+        CHECK(ref == 'e');
+        
+        // Modify through reference
+        ref = 'X';
+        CHECK(str == "hXllo");
+    }
+
+    TEST_CASE("at with index zero on empty container") {
+        std::vector<int> empty_vec;
+        auto result = at(empty_vec, 0);
+        CHECK(!result.has_value());
     }
 
     TEST_CASE("pop operations on single element") {

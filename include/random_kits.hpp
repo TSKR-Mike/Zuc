@@ -9,6 +9,8 @@
 #pragma once
 #include <random>
 #include <chrono>
+#include <algorithm>
+#include "common_concepts.hpp"
 
 namespace zuc {
 
@@ -137,6 +139,46 @@ int64_t inline uniform_random_int64(int64_t min, int64_t max) {
 double inline uniform_random_double(double min, double max) {
     std::uniform_real_distribution<double> dist(min, max);
     return dist(global_generator);
+}
+
+/**
+ * @brief Shuffle a container using the default random engine
+ * @tparam Container Container type with random access iterators
+ * @param c Container to shuffle
+ * @note Uses the global Mersenne Twister generator for reproducibility
+ * @note Container must support random access (vector, deque, array, etc.)
+ */
+template <typename Container>
+void shuffle(Container& c) {
+    std::shuffle(std::begin(c), std::end(c), global_generator);
+}
+
+/**
+ * @brief Shuffle a container using a custom random engine
+ * @tparam Container Container type with random access iterators
+ * @tparam URBG Uniform Random Bit Generator type
+ * @param c Container to shuffle
+ * @param g Random engine to use for shuffling
+ * @note Allows flexibility to use different random engines
+ * @note Container must support random access (vector, deque, array, etc.)
+ */
+template <typename Container, typename URBG>
+void shuffle(Container& c, URBG&& g) {
+    std::shuffle(std::begin(c), std::end(c), std::forward<URBG>(g));
+}
+
+/**
+ * @brief Return a shuffled copy of a container
+ * @tparam Container Container type with random access iterators
+ * @param c Container to copy and shuffle
+ * @return New container with shuffled elements
+ * @note Original container remains unchanged
+ * @note Container must support random access (vector, deque, array, etc.)
+ */
+template <typename Container>
+Container shuffled(Container c) {
+    shuffle(c);
+    return c;
 }
 
 

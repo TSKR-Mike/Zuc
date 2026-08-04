@@ -344,3 +344,192 @@ TEST_SUITE("Random Number Generation") {
         CHECK(batches_different);
     }
 }
+
+/**
+ * @test Container Shuffling
+ * Tests for shuffle functions including default engine, custom engine, and shuffled copy.
+ */
+TEST_SUITE("Container Shuffling") {
+    TEST_CASE("shuffle with default engine") {
+        std::vector<int> vec = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+        auto original = vec;
+        
+        shuffle(vec);
+        
+        // Check that size is preserved
+        CHECK(vec.size() == original.size());
+        
+        // Check that elements are the same (just reordered)
+        std::sort(vec.begin(), vec.end());
+        std::sort(original.begin(), original.end());
+        CHECK(vec == original);
+    }
+
+    TEST_CASE("shuffle with custom engine") {
+        std::vector<int> vec = {1, 2, 3, 4, 5};
+        auto original = vec;
+        
+        std::mt19937 custom_engine(42); // Fixed seed for reproducibility
+        shuffle(vec, custom_engine);
+        
+        // Check that size is preserved
+        CHECK(vec.size() == original.size());
+        
+        // Check that elements are the same (just reordered)
+        std::sort(vec.begin(), vec.end());
+        std::sort(original.begin(), original.end());
+        CHECK(vec == original);
+    }
+
+    TEST_CASE("shuffle with custom engine reproducibility") {
+        std::vector<int> vec1 = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+        std::vector<int> vec2 = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+        
+        std::mt19937 engine1(42);
+        std::mt19937 engine2(42);
+        
+        shuffle(vec1, engine1);
+        shuffle(vec2, engine2);
+        
+        // Same seed should produce same shuffle
+        CHECK(vec1 == vec2);
+    }
+
+    TEST_CASE("shuffled returns copy") {
+        std::vector<int> original = {1, 2, 3, 4, 5};
+        auto copy = original;
+        
+        auto shuffled_vec = shuffled(original);
+        
+        // Original should be unchanged
+        CHECK(original == copy);
+        
+        // Shuffled version should have same elements
+        std::sort(shuffled_vec.begin(), shuffled_vec.end());
+        std::sort(original.begin(), original.end());
+        CHECK(shuffled_vec == original);
+    }
+
+    TEST_CASE("shuffle different containers") {
+        // Test with std::vector
+        std::vector<int> vec = {1, 2, 3, 4, 5};
+        auto vec_original = vec;
+        shuffle(vec);
+        CHECK(vec.size() == vec_original.size());
+        
+        // Test with std::deque
+        std::deque<int> deq = {1, 2, 3, 4, 5};
+        auto deq_original = deq;
+        shuffle(deq);
+        CHECK(deq.size() == deq_original.size());
+        
+        // Test with std::array
+        std::array<int, 5> arr = {1, 2, 3, 4, 5};
+        auto arr_original = arr;
+        shuffle(arr);
+        CHECK(arr.size() == arr_original.size());
+    }
+
+    TEST_CASE("shuffle empty container") {
+        std::vector<int> empty_vec;
+        CHECK_NOTHROW(shuffle(empty_vec));
+        CHECK(empty_vec.empty());
+    }
+
+    TEST_CASE("shuffle single element") {
+        std::vector<int> single = {42};
+        auto original = single;
+        shuffle(single);
+        CHECK(single == original);
+    }
+
+    TEST_CASE("shuffle two elements") {
+        std::vector<int> two = {1, 2};
+        auto original = two;
+        
+        shuffle(two);
+        
+        // Should still contain the same elements
+        CHECK(two.size() == 2);
+        CHECK(((two[0] == 1 && two[1] == 2) || (two[0] == 2 && two[1] == 1)));
+    }
+
+    TEST_CASE("shuffle large container") {
+        std::vector<int> large(1000);
+        for (size_t i = 0; i < large.size(); ++i) {
+            large[i] = static_cast<int>(i);
+        }
+        auto original = large;
+        
+        shuffle(large);
+        
+        // Check size preserved
+        CHECK(large.size() == original.size());
+        
+        // Check elements preserved
+        std::sort(large.begin(), large.end());
+        CHECK(large == original);
+    }
+
+    TEST_CASE("shuffle with strings") {
+        std::vector<std::string> words = {"hello", "world", "test", "shuffle", "random"};
+        auto original = words;
+        
+        shuffle(words);
+        
+        // Check size preserved
+        CHECK(words.size() == original.size());
+        
+        // Check elements preserved
+        std::sort(words.begin(), words.end());
+        std::sort(original.begin(), original.end());
+        CHECK(words == original);
+    }
+
+    TEST_CASE("shuffled with different types") {
+        // Test with int
+        std::vector<int> int_vec = {1, 2, 3};
+        auto int_shuffled = shuffled(int_vec);
+        CHECK(int_shuffled.size() == 3);
+        CHECK(int_vec == std::vector<int>{1, 2, 3}); // Original unchanged
+        
+        // Test with double
+        std::vector<double> double_vec = {1.1, 2.2, 3.3};
+        auto double_shuffled = shuffled(double_vec);
+        CHECK(double_shuffled.size() == 3);
+        CHECK(double_vec == std::vector<double>{1.1, 2.2, 3.3}); // Original unchanged
+        
+        // Test with string
+        std::vector<std::string> string_vec = {"a", "b", "c"};
+        auto string_shuffled = shuffled(string_vec);
+        CHECK(string_shuffled.size() == 3);
+        CHECK(string_vec == std::vector<std::string>{"a", "b", "c"}); // Original unchanged
+    }
+
+    TEST_CASE("shuffle statistical randomness") {
+        // Test that shuffling actually randomizes the order
+        std::vector<int> vec = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+        
+        // Count how many times elements stay in their original position
+        int same_position_count = 0;
+        const int trials = 100;
+        
+        for (int i = 0; i < trials; ++i) {
+            std::vector<int> test_vec = vec;
+            auto original = test_vec;
+            shuffle(test_vec);
+            
+            for (size_t j = 0; j < test_vec.size(); ++j) {
+                if (test_vec[j] == original[j]) {
+                    same_position_count++;
+                }
+            }
+        }
+        
+        // On average, we expect about 1 element to stay in place (10% for 10 elements)
+        // Over 100 trials, that's about 100 total same-position occurrences
+        // Allow reasonable variance: 50 to 150
+        CHECK(same_position_count > 50);
+        CHECK(same_position_count < 150);
+    }
+}

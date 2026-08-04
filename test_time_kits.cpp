@@ -301,7 +301,7 @@ TEST_SUITE("Timing Precision Functions") {
         CHECK(get_prec_unit(TimePrecision::minute_precs) == "min");
         CHECK(get_prec_unit(TimePrecision::second_precs) == "s");
         CHECK(get_prec_unit(TimePrecision::millisecond_precs) == "ms");
-        CHECK(get_prec_unit(TimePrecision::microsecond_precs) == "mircos");
+        CHECK(get_prec_unit(TimePrecision::microsecond_precs) == "micros");
     }
 
     TEST_CASE("format_duration") {
@@ -325,7 +325,7 @@ TEST_SUITE("Timing Precision Functions") {
         CHECK(min_str.find("min") != std::string::npos);
         CHECK(sec_str.find("s") != std::string::npos);
         CHECK(ms_str.find("ms") != std::string::npos);
-        CHECK(us_str.find("mircos") != std::string::npos);
+        CHECK(us_str.find("micros") != std::string::npos);
     }
 }
 

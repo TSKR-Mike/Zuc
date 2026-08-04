@@ -602,10 +602,10 @@ class ChunkSpan {
      * @brief Constructs a ChunkSpan from a range
      * @param r The input range
      */
-    explicit ChunkSpan(const Range& r)
-        : data_(r),
+    explicit ChunkSpan(Range& r)
+        : data_(std::data(r), std::size(r)),
           total_size_(std::size(r)),
-          chunks_num_(total_size_ / chunk_size) {}
+          chunks_num_((total_size_ + chunk_size - 1) / chunk_size) {}
     /**
      * @class ConstIterator
      * @brief Const random access iterator for ChunkSpan
@@ -634,14 +634,14 @@ class ChunkSpan {
 
         ConstIterator& operator++() {
             assert(total_chunks_ != 0 && "the span has no chunks");
-            assert(curr_chunk_offset_ + 1 < total_chunks_ &&
+            assert(curr_chunk_offset_ < total_chunks_ &&
                    "cannot increment past the last chunk");
             ++curr_chunk_offset_;
             return *this;
         }
         ConstIterator operator++(int) {
             assert(total_chunks_ != 0 && "the span has no chunks");
-            assert(curr_chunk_offset_ + 1 < total_chunks_ &&
+            assert(curr_chunk_offset_ < total_chunks_ &&
                    "cannot increment past the last chunk");
             ConstIterator temp = *this;
             ++curr_chunk_offset_;
@@ -672,7 +672,8 @@ class ChunkSpan {
                 return parent_->data_.subspan(curr_chunk_offset_ * chunk_size,
                                               chunk_size);
             } else {
-                return parent_->data_.subspan(curr_chunk_offset_ * chunk_size);
+                size_t remaining = total_size_ - curr_chunk_offset_ * chunk_size;
+                return parent_->data_.subspan(curr_chunk_offset_ * chunk_size, remaining);
             }
         }
 
@@ -786,14 +787,14 @@ class ChunkSpan {
 
         Iterator& operator++() {
             assert(total_chunks_ != 0 && "the span has no chunks");
-            assert(curr_chunk_offset_ + 1 < total_chunks_ &&
+            assert(curr_chunk_offset_ < total_chunks_ &&
                    "cannot increment past the last chunk");
             ++curr_chunk_offset_;
             return *this;
         }
         Iterator operator++(int) {
             assert(total_chunks_ != 0 && "the span has no chunks");
-            assert(curr_chunk_offset_ + 1 < total_chunks_ &&
+            assert(curr_chunk_offset_ < total_chunks_ &&
                    "cannot increment past the last chunk");
             Iterator temp = *this;
             ++curr_chunk_offset_;
@@ -824,7 +825,8 @@ class ChunkSpan {
                 return parent_->data_.subspan(curr_chunk_offset_ * chunk_size,
                                               chunk_size);
             } else {
-                return parent_->data_.subspan(curr_chunk_offset_ * chunk_size);
+                size_t remaining = total_size_ - curr_chunk_offset_ * chunk_size;
+                return parent_->data_.subspan(curr_chunk_offset_ * chunk_size, remaining);
             }
         }
 
@@ -964,50 +966,95 @@ class ChunkSpan {
     std::span<ElemType> get_data() const { return data_; }
 
     /**
-     * @brief Random access operator (no bounds checking)
-     * @param index Element index
-     * @return Reference to element at index
+     * @brief Random access operator for chunks (no bounds checking)
+     * @param chunk_index Chunk index
+     * @return Span of elements in the specified chunk
      */
-    ElemType& operator[](size_t index) {
-        assert(index < total_size_);
-        return data_[index];
+    std::span<ElemType> operator[](size_t chunk_index) {
+        assert(chunk_index < chunks_num_);
+        if (chunk_index < chunks_num_ - 1) {
+            return data_.subspan(chunk_index * chunk_size, chunk_size);
+        } else {
+            size_t remaining = total_size_ - chunk_index * chunk_size;
+            return data_.subspan(chunk_index * chunk_size, remaining);
+        }
     }
 
     /**
-     * @brief Random access operator (no bounds checking)
-     * @param index Element index
-     * @return Const reference to element at index
+     * @brief Random access operator for chunks (no bounds checking)
+     * @param chunk_index Chunk index
+     * @return Const span of elements in the specified chunk
      */
-    const ElemType& operator[](size_t index) const {
-        assert(index < total_size_);
-        return data_[index];
+    const std::span<ElemType> operator[](size_t chunk_index) const {
+        assert(chunk_index < chunks_num_);
+        if (chunk_index < chunks_num_ - 1) {
+            return data_.subspan(chunk_index * chunk_size, chunk_size);
+        } else {
+            size_t remaining = total_size_ - chunk_index * chunk_size;
+            return data_.subspan(chunk_index * chunk_size, remaining);
+        }
     }
 
     /**
-     * @brief Random access with bounds checking
-     * @param index Element index
+     * @brief Access element at global index with bounds checking
+     * @param index Global element index
      * @return Reference to element at index
-     * @throws std::out_of_range if index >= size()
+     * @throws std::out_of_range if index >= total_size_
      */
-    ElemType& at(size_t index) {
+    ElemType& element_at(size_t index) {
         if (index >= total_size_) {
-            throw std::out_of_range("ChunkSpan::at: index out of range");
+            throw std::out_of_range("ChunkSpan::element_at: index out of range");
         }
         return data_[index];
     }
 
     /**
-     * @brief Random access with bounds checking
-     * @param index Element index
+     * @brief Access element at global index with bounds checking
+     * @param index Global element index
      * @return Const reference to element at index
-     * @throws std::out_of_range if index >= size()
+     * @throws std::out_of_range if index >= total_size_
      */
-    const ElemType& at(size_t index) const {
+    const ElemType& element_at(size_t index) const {
         if (index >= total_size_) {
-            throw std::out_of_range("ChunkSpan::at: index out of range");
+            throw std::out_of_range("ChunkSpan::element_at: index out of range");
         }
         return data_[index];
-        return data_[index];
+    }
+
+    /**
+     * @brief Access chunk at index with bounds checking
+     * @param chunk_index Chunk index
+     * @return Span of elements in the specified chunk
+     * @throws std::out_of_range if chunk_index >= chunks_num_
+     */
+    std::span<ElemType> chunk_at(size_t chunk_index) {
+        if (chunk_index >= chunks_num_) {
+            throw std::out_of_range("ChunkSpan::chunk_at: chunk index out of range");
+        }
+        if (chunk_index < chunks_num_ - 1) {
+            return data_.subspan(chunk_index * chunk_size, chunk_size);
+        } else {
+            size_t remaining = total_size_ - chunk_index * chunk_size;
+            return data_.subspan(chunk_index * chunk_size, remaining);
+        }
+    }
+
+    /**
+     * @brief Access chunk at index with bounds checking
+     * @param chunk_index Chunk index
+     * @return Const span of elements in the specified chunk
+     * @throws std::out_of_range if chunk_index >= chunks_num_
+     */
+    const std::span<ElemType> chunk_at(size_t chunk_index) const {
+        if (chunk_index >= chunks_num_) {
+            throw std::out_of_range("ChunkSpan::chunk_at: chunk index out of range");
+        }
+        if (chunk_index < chunks_num_ - 1) {
+            return data_.subspan(chunk_index * chunk_size, chunk_size);
+        } else {
+            size_t remaining = total_size_ - chunk_index * chunk_size;
+            return data_.subspan(chunk_index * chunk_size, remaining);
+        }
     }
 
    protected:

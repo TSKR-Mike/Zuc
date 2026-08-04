@@ -690,6 +690,35 @@ TEST_SUITE("Repeat Operations") {
         CHECK(repeated.size() == 200);
         CHECK(repeated.substr(0, 6) == "ababab");
     }
+
+    TEST_CASE("repeat with const reference") {
+        const std::string test_str = "test";
+        auto repeated = repeat(test_str, 3);
+        CHECK(repeated == "testtesttest");
+    }
+
+    TEST_CASE("repeat with temporary string") {
+        auto repeated = repeat(std::string("temp"), 2);
+        CHECK(repeated == "temptemp");
+    }
+
+    TEST_CASE("repeat with string literal") {
+        auto repeated = repeat(std::string("literal"), 3);
+        CHECK(repeated == "literalliteralliteral");
+    }
+
+    TEST_CASE("repeat preserves original string") {
+        std::string test_str = "original";
+        auto repeated = repeat(test_str, 2);
+        CHECK(test_str == "original");
+        CHECK(repeated == "originaloriginal");
+    }
+
+    TEST_CASE("repeat with special characters") {
+        std::string test_str = "\n\t\r";
+        auto repeated = repeat(test_str, 2);
+        CHECK(repeated == "\n\t\r\n\t\r");
+    }
 }
 
 /**

@@ -2,13 +2,14 @@
 
 #include <filesystem>
 #include <fstream>
+#include <ostream>
 #include <string>
 #include <thread>
 #include <vector>
-#include <ostream>
 
 #include "doctest.h"
 #include "include/io_kits.hpp"
+
 
 using namespace zuc;
 
@@ -459,6 +460,104 @@ TEST_SUITE("File Edge Cases") {
             FileMgr file(test_file, std::ios::in);
             auto content = file.read_all();
             CHECK(content[0].find("Replaced content") != std::string::npos);
+        }
+
+        std::filesystem::remove(test_file);
+    }
+
+    TEST_CASE("FileMgr read_a_line with Windows line endings") {
+        const std::string test_file = "test_file_windows_line_endings.txt";
+
+        {
+            FileMgr file(test_file, std::ios::out | std::ios::binary);
+            file.write("Line 1\r\nLine 2\r\nLine 3\r\n");
+        }
+
+        {
+            FileMgr file(test_file, std::ios::in);
+            auto [status1, line1] = file.read_a_line();
+            CHECK(status1 == ReadLineStatus::Success);
+            CHECK(line1 == "Line 1");  // Should not contain '\r'
+
+            auto [status2, line2] = file.read_a_line();
+            CHECK(status2 == ReadLineStatus::Success);
+            CHECK(line2 == "Line 2");  // Should not contain '\r'
+
+            auto [status3, line3] = file.read_a_line();
+            CHECK(status3 == ReadLineStatus::Success);
+            CHECK(line3 == "Line 3");  // Should not contain '\r'
+
+            auto [status4, line4] = file.read_a_line();
+            CHECK(status4 == ReadLineStatus::EndOfFile);
+        }
+
+        std::filesystem::remove(test_file);
+    }
+
+    TEST_CASE("FileMgr read_a_line with mixed line endings") {
+        const std::string test_file = "test_file_mixed_line_endings.txt";
+
+        {
+            FileMgr file(test_file, std::ios::out | std::ios::binary);
+            file.write("Unix\nWindows\r\nMac\r");
+        }
+
+        {
+            FileMgr file(test_file, std::ios::in);
+            auto [status1, line1] = file.read_a_line();
+            CHECK(status1 == ReadLineStatus::Success);
+            CHECK(line1 == "Unix");
+
+            auto [status2, line2] = file.read_a_line();
+            CHECK(status2 == ReadLineStatus::Success);
+            CHECK(line2 == "Windows");  // Should not contain '\r'
+
+            auto [status3, line3] = file.read_a_line();
+            CHECK(status3 == ReadLineStatus::Success);
+            CHECK(line3 == "Mac");  // Should not contain '\r'
+        }
+
+        std::filesystem::remove(test_file);
+    }
+
+    TEST_CASE("FileMgr read_a_line with trailing carriage return") {
+        const std::string test_file = "test_file_trailing_cr.txt";
+
+        {
+            FileMgr file(test_file, std::ios::out | std::ios::binary);
+            file.write("Content\r");
+        }
+
+        {
+            FileMgr file(test_file, std::ios::in);
+            auto [status, line] = file.read_a_line();
+            CHECK(status == ReadLineStatus::Success);
+            CHECK(line == "Content");  // Should not contain '\r'
+            CHECK(line.value().back() != '\r');
+        }
+
+        std::filesystem::remove(test_file);
+    }
+
+    TEST_CASE("FileMgr read_all with Windows line endings") {
+        const std::string test_file = "test_file_read_all_windows.txt";
+
+        {
+            FileMgr file(test_file, std::ios::out | std::ios::binary);
+            file.write("Line 1\r\nLine 2\r\nLine 3\r\n");
+        }
+
+        {
+            FileMgr file(test_file, std::ios::in);
+            auto content = file.read_all();
+            CHECK(content.size() == 3);
+            CHECK(content[0] == "Line 1");
+            CHECK(content[1] == "Line 2");
+            CHECK(content[2] == "Line 3");
+            // Verify no '\r' characters remain
+            for (const auto& line : content) {
+                CHECK(line.find('\r') == std::string::npos);
+            }
         }
 
         std::filesystem::remove(test_file);

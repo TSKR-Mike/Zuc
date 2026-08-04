@@ -162,6 +162,29 @@ TEST_SUITE("Binary Data Conversion") {
         CHECK(bytes.size() == text.size());
     }
 
+    TEST_CASE("string to bytes with temporary string") {
+        auto bytes = convert_to_bytes(std::string("Temporary"));
+        CHECK(bytes.size() == 9);
+    }
+
+    TEST_CASE("string to bytes with const reference") {
+        const std::string text = "Const string";
+        auto bytes = convert_to_bytes(text);
+        CHECK(bytes.size() == 12);
+    }
+
+    TEST_CASE("string to bytes with empty string") {
+        std::string text = "";
+        auto bytes = convert_to_bytes(text);
+        CHECK(bytes.size() == 0);
+    }
+
+    TEST_CASE("string to bytes with special characters") {
+        std::string text = "Hello\nWorld\tTest";
+        auto bytes = convert_to_bytes(text);
+        CHECK(bytes.size() == 16);
+    }
+
     TEST_CASE("empty string_view to bytes") {
         std::string_view text = "";
         auto bytes = convert_to_bytes(text);

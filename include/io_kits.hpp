@@ -270,6 +270,10 @@ class FileMgr {
         std::string line;
         std::getline(file_, line);
         
+        if (!line.empty() && line.back() == '\r') {
+            line.pop_back();
+        }
+        
         if (file_.eof()) {
             file_.clear();
             // Reach the end of the file
