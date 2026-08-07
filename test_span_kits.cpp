@@ -446,4 +446,90 @@ TEST_SUITE("ChunkSpan Operations") {
         CHECK(original_data[0] == 1);
         CHECK(original_data[4] == 5);
     }
+
+    TEST_CASE("contains_if finds element") {
+        std::vector<int> vec = {1, 2, 3, 4, 5};
+        std::span<int> sp(vec);
+        
+        bool found = contains_if(sp, [](int x) { return x % 2 == 0; });
+        CHECK(found);
+    }
+
+    TEST_CASE("contains_if no match") {
+        std::vector<int> vec = {1, 3, 5, 7, 9};
+        std::span<int> sp(vec);
+        
+        bool found = contains_if(sp, [](int x) { return x % 2 == 0; });
+        CHECK(!found);
+    }
+
+    TEST_CASE("contains_if empty span") {
+        std::vector<int> vec;
+        std::span<int> sp(vec);
+        
+        bool found = contains_if(sp, [](int x) { return x > 0; });
+        CHECK(!found);
+    }
+
+    TEST_CASE("contains_if all match") {
+        std::vector<int> vec = {2, 4, 6, 8, 10};
+        std::span<int> sp(vec);
+        
+        bool found = contains_if(sp, [](int x) { return x % 2 == 0; });
+        CHECK(found);
+    }
+
+    TEST_CASE("contains_if with strings") {
+        std::vector<std::string> vec = {"hello", "world", "test"};
+        std::span<std::string> sp(vec);
+        
+        bool found = contains_if(sp, [](const std::string& s) { return s.length() > 4; });
+        CHECK(found);
+    }
+
+    TEST_CASE("contains_if complex predicate") {
+        std::vector<int> vec = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+        std::span<int> sp(vec);
+        
+        bool found = contains_if(sp, [](int x) { return x > 5 && x < 8; });
+        CHECK(found);
+    }
+
+    TEST_CASE("contains_if with negative numbers") {
+        std::vector<int> vec = {-5, -3, -1, 0, 1, 3, 5};
+        std::span<int> sp(vec);
+        
+        bool found = contains_if(sp, [](int x) { return x < 0; });
+        CHECK(found);
+    }
+
+    TEST_CASE("contains_if boundary conditions") {
+        std::vector<int> vec = {1, 2, 3};
+        std::span<int> sp(vec);
+        
+        CHECK(contains_if(sp, [](int x) { return x == 1; }));
+        CHECK(contains_if(sp, [](int x) { return x == 3; }));
+        CHECK(!contains_if(sp, [](int x) { return x == 0; }));
+        CHECK(!contains_if(sp, [](int x) { return x == 4; }));
+    }
+
+    TEST_CASE("contains_if with large span") {
+        std::vector<int> vec(1000);
+        for (size_t i = 0; i < vec.size(); ++i) {
+            vec[i] = static_cast<int>(i);
+        }
+        std::span<int> sp(vec);
+        
+        bool found = contains_if(sp, [](int x) { return x == 500; });
+        CHECK(found);
+    }
+
+    TEST_CASE("contains_if exception safety") {
+        std::vector<int> vec = {1, 2, 3};
+        std::span<int> sp(vec);
+        
+        // contains_if should not throw on valid input
+        CHECK_NOTHROW(contains_if(sp, [](int x) { return x > 0; }));
+        CHECK_NOTHROW(contains_if(std::span<int>(), [](int x) { return true; }));
+    }
 }

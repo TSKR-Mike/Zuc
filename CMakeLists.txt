@@ -1,10 +1,13 @@
 cmake_minimum_required(VERSION 3.22)
+project(zuc)
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-project(zuc)
 
-# Main executable
+# -----------------------------------------------------------------------------
+# Main test executable
+# -----------------------------------------------------------------------------
 add_executable(zuc_test 
     test.cpp
     test_container_kits.cpp
@@ -14,6 +17,10 @@ add_executable(zuc_test
     test_io_kits.cpp
     test_random_kits.cpp
     test_common_concepts.cpp
+    test_numerics_kits.cpp
 )
-# Enable testing
-add_test(NAME zucTests COMMAND zuc_test)
+
+# -----------------------------------------------------------------------------
+# Register with CTest (optional, for `ctest` command)
+# -----------------------------------------------------------------------------
+enable_testing()

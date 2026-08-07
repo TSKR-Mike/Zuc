@@ -318,7 +318,7 @@ constexpr To saturate_cast(From value) noexcept {
         return static_cast<To>(value);
     } else {  // floating → floating
         // floating → floating: never overflow, just saturate
-        constexpr To min = std::numeric_limits<To>::min();
+        constexpr To min = std::numeric_limits<To>::lowest();
         constexpr To max = std::numeric_limits<To>::max();
         if (isinf(value)) {
             return value > 0 ? max : min;

@@ -56,14 +56,6 @@ class ScopeGuard {
      * @brief Dismisses the scope guard, preventing the function from being called
      * @note Once dismissed, the function will not execute when the ScopeGuard is destroyed
      */
-    /**
-     * @brief Dismisses the scope guard, preventing the function from being called
-     * @note Once dismissed, the function will not execute even on successful scope exit
-     */
-    /**
-     * @brief Dismisses the scope guard, preventing the function from being called
-     * @note Once dismissed, the function will not execute even on failure scope exit
-     */
     void dismiss() { is_active_ = false; }
 
    protected:

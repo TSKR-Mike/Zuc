@@ -129,10 +129,10 @@ constexpr bool contains_any(const std::span<T> sp,
     return false;
 }
 
-template <typename Range, typename ElemType = get_rangelike_value_type<Range>>
-    requires RangeLike<Range>
-constexpr bool contains_if(const Range& range, UnaryPred<ElemType> auto pred) {
-    return std::any_of(range.begin(), range.end(), pred);
+template <typename T>
+    requires RangeLike<T>
+constexpr bool contains_if(const std::span<T> sp, UnaryPred<T> auto pred) {
+    return std::any_of(sp.begin(), sp.end(), pred);
 }
 
 /**

@@ -22,6 +22,7 @@
 #include <map>
 #include <optional>
 #include <span>
+#include <stdexcept>
 #include <string_view>
 #include <type_traits>
 #include <unordered_map>
@@ -77,7 +78,8 @@ template <typename Range1, typename Range2>
                                            get_rangelike_value_type<Range2>> &&
              RangeLike<Range1> && RangeLike<Range2>
 constexpr bool contains_any(const Range1& obj, const Range2& contain_objs) {
-    if (std::empty(contain_objs) || std::empty(obj)) return false;
+    if (get_rangelike_size(contain_objs) == 0 || get_rangelike_size(obj) == 0)
+        return false;
     for (const auto& x : contain_objs) {
         if (contains(obj, x)) return true;
     }
@@ -99,8 +101,9 @@ constexpr bool contains_any(const Range1& obj, const Range2& contain_objs) {
  * bool has_negative = contains_if(vec, [](int x) { return x < 0; }); // false
  */
 template <typename Range, typename ElemType = get_rangelike_value_type<Range>>
+    requires RangeLike<Range>
 constexpr bool contains_if(const Range& obj, UnaryPred<ElemType> auto pred) {
-    if (std::empty(obj)) {
+    if (get_rangelike_size(obj) == 0) {
         return false;
     }
     return std::find_if(std::begin(obj), std::end(obj), pred) != std::end(obj);
@@ -187,7 +190,7 @@ template <typename Range, typename ElemType = get_rangelike_value_type<Range>>
              IsNotOneOf<Range, std::string, std::string_view>
 constexpr std::vector<ElemType> slice(const Range& obj, size_t start,
                                       size_t end, size_t step = 1) {
-    size_t total_size = std::size(obj);
+    size_t total_size = get_rangelike_size(obj);
     if (total_size == 0) {
         return {};
     }
@@ -220,7 +223,7 @@ std::optional<ElemType> pop_front_value(ContainerType& container) {
 template <typename Range, typename ElemType = get_rangelike_value_type<Range>>
     requires RangeLike<Range>
 constexpr void erase_if(Range& obj, UnaryPred<ElemType> auto pred) {
-    if (std::empty(obj)) {
+    if (get_rangelike_size(obj) == 0) {
         return;
     }
     for (auto it = std::begin(obj); it != std::end(obj);) {
@@ -237,7 +240,7 @@ template <typename TransformType, typename Range, typename F,
     requires InvocableReturns<F, TransformType, ElemType> && RangeLike<Range>
 constexpr std::vector<TransformType> transform_all_to_vector(const Range& range,
                                                              F transform_func) {
-    if (std::size(range) == 0) {
+    if (get_rangelike_size(range) == 0) {
         return {};
     }
     std::vector<TransformType> result;
@@ -250,11 +253,11 @@ constexpr std::vector<TransformType> transform_all_to_vector(const Range& range,
 template <typename MapType, typename KeyType = MapType::key_type>
     requires is_map_like_v<MapType>
 std::unordered_set<KeyType> get_map_keys(const MapType& m) {
-    if (std::size(m) == 0) {
+    if (get_rangelike_size(m) == 0) {
         return {};
     }
     std::unordered_set<KeyType> result;
-    result.reserve(m.size());
+    result.reserve(get_rangelike_size(m));
     for (const auto& [k, v] : m) {
         result.insert(k);
     }
@@ -264,11 +267,11 @@ std::unordered_set<KeyType> get_map_keys(const MapType& m) {
 template <typename MapType, typename ValueType = MapType::mapped_type>
     requires is_map_like_v<MapType>
 std::unordered_set<ValueType> get_map_values(const MapType& m) {
-    if (std::size(m) == 0) {
+    if (get_rangelike_size(m) == 0) {
         return {};
     }
     std::unordered_set<ValueType> result;
-    result.reserve(m.size());
+    result.reserve(get_rangelike_size(m));
     for (const auto& [k, v] : m) {
         result.insert(v);
     }
@@ -278,20 +281,16 @@ std::unordered_set<ValueType> get_map_values(const MapType& m) {
 template <typename Range, typename ElemType = get_rangelike_value_type<Range>>
     requires RangeLike<Range> && Insertable<Range, ElemType>
 std::decay_t<Range> merge(const Range& r1, const Range& r2) {
-    if (std::size(r1) == 0) {
-        return r2;
-    }
-    if (std::size(r2) == 0) {
-        return r1;
-    }
     std::decay_t<Range> result;
-    if constexpr (requires { result.reserve(std::size(r1) + std::size(r2)); }) {
-        result.reserve(std::size(r1) + std::size(r2));
+    
+    if constexpr (requires { result.reserve(get_rangelike_size(r1) + get_rangelike_size(r2)); }) {
+        result.reserve(get_rangelike_size(r1) + get_rangelike_size(r2));
     }
-    for (auto& it : r1) {
+    
+    for (const auto& it : r1) {
         result.insert(std::end(result), it);
     }
-    for (auto& it : r2) {
+    for (const auto& it : r2) {
         result.insert(std::end(result), it);
     }
     return result;
@@ -299,19 +298,25 @@ std::decay_t<Range> merge(const Range& r1, const Range& r2) {
 template <typename Range, typename ElemType = get_rangelike_value_type<Range>>
     requires RangeLike<Range>
 std::optional<ElemType> at(Range& r, size_t index) {
-    size_t s = std::size(r);
+    size_t s = get_rangelike_size(r);
     if (index >= s) {
         return std::nullopt;
     }
     auto it = std::begin(r);
     std::advance(it, index);
-    return *it;
+
+    if constexpr (std::is_move_constructible_v<ElemType> &&
+                  !std::is_copy_constructible_v<ElemType>) {
+        return std::move(*it);
+    } else {
+        return *it;
+    }
 }
 
 template <typename Range, typename ElemType = get_rangelike_value_type<Range>>
     requires RangeLike<Range>
 std::optional<const ElemType> at(const Range& r, size_t index) {
-    size_t s = std::size(r);
+    size_t s = get_rangelike_size(r);
     if (index >= s) {
         return std::nullopt;
     }
@@ -323,7 +328,7 @@ std::optional<const ElemType> at(const Range& r, size_t index) {
 template <typename Range, typename ElemType = get_rangelike_value_type<Range>>
     requires RangeLike<Range>
 ElemType& at_ref(Range& r, size_t index) {
-    size_t s = std::size(r);
+    size_t s = get_rangelike_size(r);
     if (index >= s) {
         throw std::out_of_range("at_ref: index out of range");
     }
@@ -335,7 +340,7 @@ ElemType& at_ref(Range& r, size_t index) {
 template <typename Range, typename ElemType = get_rangelike_value_type<Range>>
     requires RangeLike<Range>
 const ElemType& at_ref(const Range& r, size_t index) {
-    size_t s = std::size(r);
+    size_t s = get_rangelike_size(r);
     if (index >= s) {
         throw std::out_of_range("at_ref: index out of range");
     }
@@ -346,8 +351,8 @@ const ElemType& at_ref(const Range& r, size_t index) {
 
 template <typename Range, typename ElemType = get_rangelike_value_type<Range>>
     requires RangeLike<Range>
-std::optional<const ElemType&> choice(const Range& r) {
-    size_t s = std::size(r);
+std::optional<ElemType> choice(Range& r) {
+    size_t s = get_rangelike_size(r);
     if (s == 0) {
         return std::nullopt;
     } else {
@@ -355,29 +360,17 @@ std::optional<const ElemType&> choice(const Range& r) {
         return at(r, index);
     }
 }
-
-template <typename Range, typename TargetType,
-          typename ElemType = get_rangelike_value_type<Range>>
-    requires RangeLike<Range> && DirectComparable<TargetType, ElemType>
-std::optional<ElemType&> find(Range& r, TargetType target) {
-    auto it = std::find(std::begin(r), std::end(r), target);
-    if (it == std::end(r)) {
+template <typename Range, typename ElemType = get_rangelike_value_type<Range>>
+    requires RangeLike<Range>
+std::optional<ElemType> choice(const Range& r) {
+    size_t s = get_rangelike_size(r);
+    if (s == 0) {
         return std::nullopt;
+    } else {
+        size_t index = random_int(0, s - 1);
+        auto it = std::begin(r);
+        std::advance(it, index);
+        return *it;
     }
-    return *it;
 }
-
-template <typename Range, typename TargetType,
-          typename ElemType = get_rangelike_value_type<Range>>
-    requires RangeLike<Range> &&
-             ExplicitConvertedComparable<TargetType, ElemType>
-std::optional<ElemType&> find(Range& r, TargetType target) {
-    auto it = std::find(std::begin(r), std::end(r),
-                        optimal_cast<TargetType, ElemType>(target));
-    if (it == std::end(r)) {
-        return std::nullopt;
-    }
-    return *it;
-}
-
 }  // namespace zuc

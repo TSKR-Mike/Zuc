@@ -241,7 +241,7 @@ inline std::string convert_to_hex(std::span<const std::byte> bytes) {
 template <typename T>
     requires std::is_trivially_copyable_v<T> &&
              IsNotOneOf<T, std::string, std::string_view>
-inline std::string convert_to_hex(T& val) {
+inline std::string convert_to_hex(const T& val) {
     return convert_to_hex(convert_to_bytes(val));
 }
 

@@ -10,6 +10,7 @@
 #include <random>
 #include <chrono>
 #include <algorithm>
+#include <cstdint>
 #include "common_concepts.hpp"
 
 namespace zuc {
@@ -19,8 +20,8 @@ thread_local inline std::random_device rd_device;
 
 // Initialize seed with multiple entropy sources for better randomness
 thread_local inline unsigned init_seed = std::random_device{}() 
-              ^ std::chrono::steady_clock::now().time_since_epoch().count() 
-              ^ (uintptr_t)new char;
+              ^ static_cast<unsigned>(std::chrono::steady_clock::now().time_since_epoch().count()) 
+              ^ reinterpret_cast<uintptr_t>(std::addressof(init_seed));
 
 // Global Mersenne Twister generator (mt19937) - shared across all functions
 thread_local inline std::mt19937 global_generator(init_seed);

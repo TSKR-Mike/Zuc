@@ -10,8 +10,6 @@
   - [Time Utilities](#time-utilities-time_kitshpp)
   - [Random Generation](#random-generation-random_kitshpp)
   - [Container Utilities](#container-utilities-container_kitshpp)
-  - [Numerics Utilities](#numerics-utilities-numerics_kitshpp)
-  - [RAII Utilities](#raii-utilities-raii_kitshpp)
   - [Common Concepts](#common-concepts-common_conceptshpp)
   - [String Conversion](#string-conversion-string_convertshpp)
 - [API Reference](#api-reference)
@@ -28,9 +26,6 @@ zuc is a modern, header-only C++20 library that provides fast, intuitive utiliti
 - **Comprehensive time utilities** including benchmarking
 - **Type-safe operations** using C++20 concepts
 - **Exception safety** throughout the library
-- **Overflow-checked arithmetic** for safe numeric operations
-- **Scope guards** for automatic resource management
-- **Compile-time type selection** for optimal performance
 
 ## Installation
 
@@ -385,6 +380,37 @@ auto detailed = get_today_time_detailed_str();  // "2026-07-26 14:30:45"
 sleep(2.5);  // Sleep for 2.5 seconds
 ```
 
+#### Countdown Timer
+
+```cpp
+// Create a countdown timer with 10 seconds
+CountDownTimer timer(10.0);
+timer.start();
+
+// Check remaining time
+if (auto remaining = timer.get_remaining_time()) {
+    write_a_line_to_console("Time left: {} seconds", *remaining);
+}
+
+// Check if finished
+if (auto finished = timer.is_finished()) {
+    if (*finished) {
+        write_a_line_to_console("Timer finished!");
+    }
+}
+
+// Pause and resume
+timer.pause();
+// ... do something else ...
+timer.resume();
+
+// Restart the timer
+timer.restart();
+
+// Reset with new time
+timer.reset(5.0);
+```
+
 ### Random Generation (`random_kits.hpp`)
 
 Random generation utilities provide convenient functions for generating random numbers.
@@ -427,6 +453,23 @@ auto uniform_int = uniform_random_int(1, 100);
 auto uniform_double = uniform_random_double(0.0, 1.0);
 ```
 
+#### Container Shuffling
+
+```cpp
+// Shuffle container in place using default engine
+std::vector<int> numbers = {1, 2, 3, 4, 5};
+shuffle(numbers);  // numbers is now randomly ordered
+
+// Shuffle with custom engine
+std::mt19937 custom_engine(42);
+shuffle(numbers, custom_engine);
+
+// Get shuffled copy (original unchanged)
+auto shuffled_copy = shuffled(numbers);  // new vector with shuffled order
+```
+
+**Note:** `shuffle()` and `shuffled()` only work with containers that support random access iterators (e.g., `std::vector`, `std::deque`, `std::array`). They do not work with `std::list` or other containers with only bidirectional iterators.
+
 ### Container Utilities (`container_kits.hpp`)
 
 Container utilities provide safe operations on standard containers.
@@ -438,6 +481,8 @@ Container utilities provide safe operations on standard containers.
 - Container slicing with step support
 - Safe container modification
 - Container transformation utilities
+- Random element selection
+- Safe indexed access with bounds checking
 
 #### Content Checking
 
@@ -477,7 +522,7 @@ std::unordered_set<int> values = get_map_values(map);
 
 ```cpp
 std::vector<int> data = {1, 2, 3, 4, 5, 6, 7, 8, 9};
-auto slice = container_slice(data, 2, 7, 2);  // {3, 5, 7}
+auto slice = slice(data, 2, 7, 2);  // {3, 5, 7}
 ```
 
 #### Container Modification
@@ -496,6 +541,34 @@ auto merged = merge(numbers, more);  // {1, 3, 5, 7, 8, 9}
 std::vector<int> numbers = {1, 2, 3, 4, 5};
 auto squared = transform_all_to_vector<int>(numbers, [](int x) { return x * x; });
 // {1, 4, 9, 16, 25}
+```
+
+#### Random Element Selection
+
+```cpp
+std::vector<int> numbers = {1, 2, 3, 4, 5};
+auto random_elem = choice(numbers);  // Optional<int> with random element
+if (random_elem) {
+    write_a_line_to_console("Selected: {}", *random_elem);
+}
+```
+
+#### Safe Indexed Access
+
+```cpp
+std::vector<int> numbers = {1, 2, 3, 4, 5};
+
+// Optional-based access (no exception)
+auto elem = at(numbers, 2);  // Optional<int> containing 3
+auto out_of_range = at(numbers, 10);  // nullopt
+
+// Reference-based access (throws on out of range)
+try {
+    int& ref = at_ref(numbers, 2);  // 3
+    int& bad_ref = at_ref(numbers, 10);  // throws std::out_of_range
+} catch (const std::out_of_range& e) {
+    write_a_line_to_console("Error: {}", e.what());
+}
 ```
 
 ### Common Concepts (`common_concepts.hpp`)
@@ -560,178 +633,12 @@ void process_int_range(const R& range) {
 
 Numerics utilities provide compile-time type selection and overflow-checked arithmetic operations.
 
-#### Compile-time Type Selection
-
-```cpp
-// Select smallest unsigned type that can hold the value
-using Type1 = select_by_max_unsigned_t<255>;   // uint8_t
-using Type2 = select_by_max_unsigned_t<256>;   // uint16_t
-using Type3 = select_by_max_unsigned_t<65535>; // uint16_t
-using Type4 = select_by_max_unsigned_t<65536>; // uint32_t
-
-// Select smallest type that can hold the range
-using SignedType = select_by_range_t<-100, 100>;    // int8_t
-using UnsignedType = select_by_range_t<0, 255>;     // uint8_t
-using LargeType = select_by_range_t<0, 100000>;    // uint32_t
-
-// Select type for single value
-using ValueType = select_by_value_t<42>;  // int8_t
-```
-
-#### Overflow-Checked Arithmetic
-
-```cpp
-// Safe addition with overflow detection
-auto result1 = checked_add<uint8_t>(200, 50);  // nullopt (overflow)
-auto result2 = checked_add<uint8_t>(200, 55);  // 255
-auto result3 = checked_add<int>(-100, 50);     // -50
-
-// Safe subtraction with underflow detection
-auto result1 = checked_sub<uint8_t>(100, 150); // nullopt (underflow)
-auto result2 = checked_sub<uint8_t>(200, 50);  // 150
-auto result3 = checked_sub<int>(-100, 50);     // -150
-
-// Safe multiplication with overflow detection
-auto result1 = checked_mul<uint8_t>(100, 3);   // nullopt (overflow: 300 > 255)
-auto result2 = checked_mul<uint8_t>(50, 4);    // 200
-auto result3 = checked_mul<int>(-100, 2);     // -200
-
-// Check for success
-if (auto sum = checked_add<int>(INT_MAX, 1)) {
-    // Safe to use the result
-    int value = *sum;
-} else {
-    // Handle overflow
-    std::cout << "Addition overflowed!" << std::endl;
-}
-```
-
-#### Platform-Specific Optimizations
-
-```cpp
-// The library automatically uses platform-specific intrinsics:
-// - MSVC: _addcarry_u64, _subborrow_u64, _umul128
-// - GCC/Clang: __builtin_add_overflow, __builtin_sub_overflow, __builtin_mul_overflow
-// - Smaller types are promoted to larger types for safe calculation
-```
-
-### RAII Utilities (`raii_kits.hpp`)
-
-RAII utilities provide scope guards for automatic resource management and cleanup.
-
-#### Basic Scope Guard
-
-```cpp
-{
-    FILE* file = fopen("data.txt", "r");
-    auto guard = generate_scope_guard([file]() {
-        fclose(file);
-        std::cout << "File closed automatically" << std::endl;
-    });
-    
-    // Use file...
-    // File will be closed automatically when leaving scope
-}
-```
-
-#### Success-Only Scope Guard
-
-```cpp
-{
-    std::vector<int> data = {1, 2, 3};
-    
-    auto guard = generate_scope_guard_success([&data]() {
-        // This only runs if no exception is thrown
-        std::cout << "Operation succeeded, saving data..." << std::endl;
-        save_to_database(data);
-    });
-    
-    // Process data...
-    process_data(data);
-    
-    // If no exception, the guard will save the data
-}
-```
-
-#### Failure-Only Scope Guard
-
-```cpp
-{
-    auto guard = generate_scope_guard_failed([]() {
-        // This only runs if an exception is thrown
-        std::cout << "Operation failed, rolling back..." << std::endl;
-        rollback_transaction();
-    });
-    
-    // Perform transaction...
-    update_database();
-    
-    // If exception thrown, rollback happens automatically
-}
-```
-
-#### Dismissing Scope Guards
-
-```cpp
-{
-    auto guard = generate_scope_guard([]() {
-        std::cout << "This won't run" << std::endl;
-    });
-    
-    // Do some work...
-    if (success_condition) {
-        guard.dismiss();  // Prevent the guard from running
-    }
-}
-```
-
-#### Practical Examples
-
-```cpp
-// File handling with automatic cleanup
-void process_file(const std::string& path) {
-    FILE* file = fopen(path.c_str(), "r");
-    if (!file) throw std::runtime_error("Cannot open file");
-    
-    auto cleanup = generate_scope_guard([file]() { fclose(file); });
-    
-    // Process file...
-    char buffer[1024];
-    while (fgets(buffer, sizeof(buffer), file)) {
-        // Process line
-    }
-    // File closed automatically
-}
-
-// Transaction management
-void update_records() {
-    begin_transaction();
-    
-    auto rollback = generate_scope_guard_failed([]() {
-        rollback_transaction();
-    });
-    
-    auto commit = generate_scope_guard_success([]() {
-        commit_transaction();
-    });
-    
-    // Perform updates...
-    update_record(1, "new value");
-    update_record(2, "another value");
-    
-    // Transaction committed or rolled back automatically
-}
-```
-
-### Numerics Utilities (`numerics_kits.hpp`)
-
-Numerics utilities provide compile-time type selection and overflow-checked arithmetic operations.
-
 **Key Features:**
 - Compile-time type selection for optimal memory usage
 - Overflow-checked arithmetic operations
 - Platform-specific optimizations using intrinsics
 - Safe numeric operations with optional return types
+- Saturating cast operations for safe type conversion
 
 #### Compile-time Type Selection
 
@@ -786,6 +693,26 @@ if (auto sum = checked_add<int>(INT_MAX, 1)) {
 // - MSVC: _addcarry_u64, _subborrow_u64, _umul128
 // - GCC/Clang: __builtin_add_overflow, __builtin_sub_overflow, __builtin_mul_overflow
 // - Smaller types are promoted to larger types for safe calculation
+```
+
+#### Saturating Cast Operations
+
+```cpp
+// Integral to integral with saturation
+auto saturated = saturate_cast<uint8_t>(300);  // 255 (max value)
+auto saturated_neg = saturate_cast<int8_t>(-200);  // -128 (min value)
+
+// Floating point to integral with saturation
+auto from_float = saturate_cast<int>(3.7);  // 3
+auto from_large_float = saturate_cast<int>(1e20);  // INT_MAX
+auto from_nan = saturate_cast<int>(NAN);  // 0
+auto from_inf = saturate_cast<int>(INFINITY);  // INT_MAX
+
+// Integral to floating point
+auto to_double = saturate_cast<double>(42);  // 42.0
+
+// Floating point to floating point
+auto double_to_float = saturate_cast<float>(1e100);  // FLT_MAX
 ```
 
 ### RAII Utilities (`raii_kits.hpp`)
@@ -904,7 +831,7 @@ void update_records() {
 
 ### String Conversion (`string_converts.hpp`)
 
-String conversion utilities provide convenient range-to-string conversion and binary data handling.
+String conversion utilities provide convenient range-to-string conversion, byte operations, and numeric parsing.
 
 #### Range to String Conversion
 
@@ -919,42 +846,41 @@ std::map<std::string, int> map = {{"a", 1}, {"b", 2}};
 auto str = convert_range_to_string(map);  // "{a: 1, b: 2}"
 ```
 
-#### Binary Data Conversion
+#### Byte Conversion
 
 ```cpp
-// Convert objects to byte spans
+// Convert trivially copyable objects to bytes
 int value = 42;
 auto bytes = convert_to_bytes(value);
-// bytes points to the memory representation of value
 
-std::vector<int> data = {1, 2, 3};
-auto data_bytes = convert_to_bytes(std::span(data));
-
-// Convert strings to bytes
+// Convert string to bytes
 std::string text = "Hello";
 auto text_bytes = convert_to_bytes(text);
+
+// Convert span to bytes
+std::vector<int> data = {1, 2, 3};
+auto data_bytes = convert_to_bytes(std::span(data));
 ```
 
 #### Hexadecimal Conversion
 
 ```cpp
-// Convert bytes to hex strings
+// Convert byte to hex
+auto hex = convert_to_hex(std::byte{0xAB});  // "AB"
+
+// Convert byte span to hex
 std::vector<std::byte> data = {std::byte{0xAB}, std::byte{0xCD}};
-std::string hex = convert_to_hex(std::span(data)); // "ABCD"
+auto hex_str = convert_to_hex(std::span(data));  // "ABCD"
 
-// Convert values to hex
-int value = 0x12345678;
-std::string hex = convert_to_hex(value);
-
-// Convert strings to hex
+// Convert string to hex
 std::string text = "Hi";
-std::string hex = convert_to_hex(text); // "4869" (ASCII for 'H' and 'i')
+auto hex_text = convert_to_hex(text);  // "4869"
 ```
 
 #### Numeric String Conversion
 
 ```cpp
-// Safe numeric parsing
+// Convert string to number
 auto result1 = try_convert_string_to_numerics<int>("123");   // 123
 auto result2 = try_convert_string_to_numerics<double>("3.14"); // 3.14
 auto result3 = try_convert_string_to_numerics<int>("abc");   // nullopt
@@ -1002,7 +928,7 @@ bool is_num3 = is_numeric("hello");  // false
 | `read_a_line_from_console(fmt, ...)` | Interactive console input |
 | `open_file(path)` | Safe file opening |
 
-### Time Classes and Functions
+### Time Classes and Functions (`time_kits.hpp`)
 
 | Class/Function | Description |
 |----------------|-------------|
@@ -1023,6 +949,9 @@ bool is_num3 = is_numeric("hello");  // false
 | `random_int64(min, max)` | Random 64-bit integer | `int64_t` |
 | `uniform_random_int(min, max)` | Uniform random integer | `int` |
 | `uniform_random_double(min, max)` | Uniform random double | `double` |
+| `shuffle(container)` | Shuffle container in place | `void` |
+| `shuffle(container, engine)` | Shuffle with custom engine | `void` |
+| `shuffled(container)` | Return shuffled copy | `Container` |
 
 ### Container Functions (`container_kits.hpp`)
 
@@ -1037,7 +966,7 @@ bool is_num3 = is_numeric("hello");  // false
 | `get_or_insert_default(map, key, default)` | Get or insert with default | `T&` |
 | `get_map_keys(map)` | Extract keys from map | `unordered_set<Key>` |
 | `get_map_values(map)` | Extract values from map | `unordered_set<Value>` |
-| `container_slice(c, start, end, step)` | Slice container with step | `vector<T>` |
+| `slice(c, start, end, step)` | Slice container with step | `vector<T>` |
 | `erase_if(container, pred)` | Remove elements matching predicate | `void` |
 | `merge(a, b)` | Merge two containers | `vector<T>` |
 | `transform_all_to_vector<T>(c, f)` | Transform elements | `vector<T>` |
@@ -1071,39 +1000,6 @@ bool is_num3 = is_numeric("hello");  // false
 | `convert_to_hex(data)` | Convert to hexadecimal string | `std::string` |
 | `try_convert_string_to_numerics<T>(str)` | Safe string to number conversion | `Optional<T>` |
 | `is_numeric(str)` | Check if string is numeric | `bool` |
-| `ScopeGuardSuccess<Func>` | Cleanup only on successful scope exit |
-| `ScopeGuardFailed<Func>` | Cleanup only on exception during scope |
-| `generate_scope_guard(func)` | Factory for creating scope guards |
-| `generate_scope_guard_success(func)` | Factory for success-only guards |
-| `generate_scope_guard_failed(func)` | Factory for failure-only guards |
-
-### Span Functions
-
-| Function | Description | Returns |
-|----------|-------------|---------|
-| `sub_span_safe(s, offset, count)` | Bounds-checked subspan | `optional<span>` |
-| `convert_span_to_vector(s)` | Convert span to vector | `vector<T>` |
-| `contains(s, value)` | Check if contains value | `bool` |
-| `find_subspan(s, target)` | Find subspan within span | `span<T>` |
-
-### I/O Classes and Functions
-
-| Class/Function | Description |
-|----------------|-------------|
-| `FileMgr` | RAII file management class |
-| `write_string_to_console(fmt, ...)` | Formatted console output |
-| `read_a_line_from_console(fmt, ...)` | Interactive console input |
-| `open_file(path)` | Safe file opening |
-
-### Time Classes and Functions
-
-| Class/Function | Description |
-|----------------|-------------|
-| `Timer` | Simple timing utility |
-| `Stopwatch` | Pause/resume timing |
-| `DateTime` | Date/time manipulation |
-| `time_a_function(name, settings, f, ...)` | Function benchmarking |
-| `sleep(seconds)` | Convenient sleep function |
 
 ## Examples
 
@@ -1182,107 +1078,6 @@ int main() {
 }
 ```
 
-### Safe Arithmetic Example
-
-```cpp
-#include "numerics_kits.hpp"
-#include "iostream"
-
-using namespace zuc;
-
-void process_coordinates(int x, int y, int offset) {
-    // Safe addition with overflow checking
-    auto new_x = checked_add(x, offset);
-    auto new_y = checked_add(y, offset);
-    
-    if (!new_x || !new_y) {
-        std::cout << "Coordinate overflow detected!" << std::endl;
-        return;
-    }
-    
-    // Safe multiplication for area calculation
-    auto area = checked_mul(*new_x, *new_y);
-    if (!area) {
-        std::cout << "Area calculation overflow!" << std::endl;
-        return;
-    }
-    
-    std::cout << "New coordinates: (" << *new_x << ", " << *new_y << ")" << std::endl;
-    std::cout << "Area: " << *area << std::endl;
-}
-
-int main() {
-    process_coordinates(100, 200, 50);  // Safe operation
-    process_coordinates(INT_MAX, 100, 1);  // Overflow detected
-    return 0;
-}
-```
-
-### Resource Management Example
-
-```cpp
-#include "raii_kits.hpp"
-#include "io_kits.hpp"
-#include "iostream"
-
-using namespace zuc;
-
-class DatabaseConnection {
-public:
-    DatabaseConnection(const std::string& conn_str) {
-        std::cout << "Connecting to database..." << std::endl;
-        // Simulate connection
-    }
-    
-    void begin_transaction() {
-        std::cout << "Transaction started" << std::endl;
-    }
-    
-    void commit() {
-        std::cout << "Transaction committed" << std::endl;
-    }
-    
-    void rollback() {
-        std::cout << "Transaction rolled back" << std::endl;
-    }
-    
-    ~DatabaseConnection() {
-        std::cout << "Connection closed" << std::endl;
-    }
-};
-
-void process_data_with_transaction() {
-    DatabaseConnection db("connection_string");
-    
-    // Setup automatic rollback on failure
-    auto rollback_guard = generate_scope_guard_failed([&db]() {
-        db.rollback();
-    });
-    
-    // Setup automatic commit on success
-    auto commit_guard = generate_scope_guard_success([&db]() {
-        db.commit();
-    });
-    
-    db.begin_transaction();
-    
-    // Process data...
-    std::cout << "Processing data..." << std::endl;
-    
-    // If no exception, commit happens automatically
-    // If exception, rollback happens automatically
-}
-
-int main() {
-    try {
-        process_data_with_transaction();
-    } catch (const std::exception& e) {
-        std::cout << "Error: " << e.what() << std::endl;
-    }
-    return 0;
-}
-```
-
 ## Requirements
 
 - **C++20** compatible compiler
@@ -1308,9 +1103,6 @@ int main() {
 1. **RAII management**: Always use `FileMgr` for automatic resource cleanup
 2. **Bounds checking**: Use `sub_span_safe()` instead of manual bounds checking
 3. **Exception handling**: Catch `FileException`, `ReadLineException`, `WriteLineException`
-4. **Overflow protection**: Use `checked_add`, `checked_sub`, `checked_mul` for arithmetic operations
-5. **Resource cleanup**: Use scope guards for automatic cleanup in complex functions
-6. **Transaction safety**: Combine `ScopeGuardSuccess` and `ScopeGuardFailed` for transaction management
 
 ### Code Style
 
@@ -1342,35 +1134,6 @@ Timer timer;
 timer.start();
 // ... work ...
 auto duration = timer.get_duration_seconds();
-
-// Safe arithmetic with error handling
-if (auto sum = checked_add<int>(a, b)) {
-    // Use the result safely
-    process_result(*sum);
-} else {
-    // Handle overflow
-    handle_overflow();
-}
-
-// Resource management with scope guards
-void process_resource() {
-    Resource* res = acquire_resource();
-    auto cleanup = generate_scope_guard([res]() { release_resource(res); });
-    
-    // Use resource...
-    // Automatically released when function returns
-}
-
-// Transaction pattern
-void update_data() {
-    begin_transaction();
-    
-    auto rollback = generate_scope_guard_failed([]() { rollback_transaction(); });
-    auto commit = generate_scope_guard_success([]() { commit_transaction(); });
-    
-    // Perform updates...
-    // Automatically committed or rolled back
-}
 ```
 
 ---

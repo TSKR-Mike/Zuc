@@ -128,7 +128,6 @@ template <typename T>
 concept RangeLike = requires(T& t) {
     std::begin(t);
     std::end(t);
-    std::size(t);
 };
 
 template <typename T, typename ValueType>
@@ -144,6 +143,32 @@ template <typename Range>
 using get_rangelike_value_type =
     std::remove_cv_t<typename std::iterator_traits<decltype(std::begin(
         std::declval<Range&>()))>::value_type>;
+
+template <typename Range>
+    requires RangeLike<Range>
+using get_rangelike_iterator_type =
+    decltype(std::begin(std::declval<Range&>()));
+
+template <typename Range>
+concept SupportsStdSize = requires (Range& r) {
+    std::size(r) && RangeLike<Range>;
+};
+
+
+template <typename Range>
+    requires RangeLike<Range> && SupportsStdSize<Range>
+inline size_t get_rangelike_size(Range& r) {
+    return std::size(r);
+}
+
+// Fallback
+template <typename Range>
+    requires RangeLike<Range> && (!SupportsStdSize<Range>)
+inline size_t get_rangelike_size(Range& r) {
+    return std::distance(std::begin(r), std::end(r));
+}
+
+
 
 // Map like containers
 template <typename T>

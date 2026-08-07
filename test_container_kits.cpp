@@ -1,16 +1,17 @@
-#include "doctest.h"
-#include <ostream>
-#include "include/container_kits.hpp"
-#include <memory>
-#include <vector>
-#include <list>
-#include <deque>
 #include <array>
+#include <deque>
+#include <list>
 #include <map>
-#include <unordered_map>
+#include <memory>
+#include <ostream>
 #include <set>
-#include <unordered_set>
 #include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
+
+#include "doctest.h"
+#include "include/container_kits.hpp"
 
 using namespace zuc;
 
@@ -126,7 +127,9 @@ TEST_SUITE("Contains If Operations") {
 
     TEST_CASE("contains_if with string length") {
         std::vector<std::string> vec = {"a", "bb", "ccc", "dd"};
-        CHECK(contains_if(vec, [](const std::string& s) { return s.length() > 2; }) == true);
+        CHECK(contains_if(vec, [](const std::string& s) {
+                  return s.length() > 2;
+              }) == true);
     }
 
     TEST_CASE("contains_if empty container") {
@@ -141,7 +144,9 @@ TEST_SUITE("Contains If Operations") {
 
     TEST_CASE("contains_if with complex predicate") {
         std::vector<std::pair<int, int>> vec = {{1, 2}, {3, 4}, {5, 6}};
-        CHECK(contains_if(vec, [](const auto& p) { return p.first + p.second > 10; }) == true);
+        CHECK(contains_if(vec, [](const auto& p) {
+                  return p.first + p.second > 10;
+              }) == true);
     }
 }
 
@@ -176,7 +181,7 @@ TEST_SUITE("Pop Back Value Operations") {
     TEST_CASE("pop_back_value with move semantics") {
         std::vector<std::unique_ptr<int>> vec;
         vec.push_back(std::make_unique<int>(42));
-        
+
         auto result = pop_back_value(vec);
         CHECK(result.has_value());
         CHECK(*result.value() == 42);
@@ -185,16 +190,16 @@ TEST_SUITE("Pop Back Value Operations") {
 
     TEST_CASE("pop_back_value multiple calls") {
         std::vector<int> vec = {1, 2, 3};
-        
+
         auto r1 = pop_back_value(vec);
         CHECK(r1.value() == 3);
-        
+
         auto r2 = pop_back_value(vec);
         CHECK(r2.value() == 2);
-        
+
         auto r3 = pop_back_value(vec);
         CHECK(r3.value() == 1);
-        
+
         auto r4 = pop_back_value(vec);
         CHECK(!r4.has_value());
     }
@@ -245,16 +250,16 @@ TEST_SUITE("Pop Front Value Operations") {
 
     TEST_CASE("pop_front_value multiple calls") {
         std::deque<int> deq = {1, 2, 3};
-        
+
         auto r1 = pop_front_value(deq);
         CHECK(r1.value() == 1);
-        
+
         auto r2 = pop_front_value(deq);
         CHECK(r2.value() == 2);
-        
+
         auto r3 = pop_front_value(deq);
         CHECK(r3.value() == 3);
-        
+
         auto r4 = pop_front_value(deq);
         CHECK(!r4.has_value());
     }
@@ -462,14 +467,16 @@ TEST_SUITE("Erase If Operations") {
 TEST_SUITE("Transform All Operations") {
     TEST_CASE("transform_all_to_vector square numbers") {
         std::vector<int> vec = {1, 2, 3, 4, 5};
-        auto result = transform_all_to_vector<int>(vec, [](int x) { return x * x; });
+        auto result =
+            transform_all_to_vector<int>(vec, [](int x) { return x * x; });
         CHECK(result.size() == 5);
         CHECK(result == std::vector<int>{1, 4, 9, 16, 25});
     }
 
     TEST_CASE("transform_all_to_vector to string") {
         std::vector<int> vec = {1, 2, 3};
-        auto result = transform_all_to_vector<std::string>(vec, [](int x) { return std::to_string(x); });
+        auto result = transform_all_to_vector<std::string>(
+            vec, [](int x) { return std::to_string(x); });
         CHECK(result.size() == 3);
         CHECK(result[0] == "1");
         CHECK(result[1] == "2");
@@ -478,34 +485,39 @@ TEST_SUITE("Transform All Operations") {
 
     TEST_CASE("transform_all_to_vector with array") {
         std::array<int, 4> arr = {1, 2, 3, 4};
-        auto result = transform_all_to_vector<int>(arr, [](int x) { return x * 2; });
+        auto result =
+            transform_all_to_vector<int>(arr, [](int x) { return x * 2; });
         CHECK(result.size() == 4);
         CHECK(result == std::vector<int>{2, 4, 6, 8});
     }
 
     TEST_CASE("transform_all_to_vector empty container") {
         std::vector<int> empty_vec;
-        auto result = transform_all_to_vector<int>(empty_vec, [](int x) { return x + 1; });
+        auto result = transform_all_to_vector<int>(empty_vec,
+                                                   [](int x) { return x + 1; });
         CHECK(result.empty());
     }
 
     TEST_CASE("transform_all_to_vector with different types") {
         std::vector<double> vec = {1.5, 2.5, 3.5};
-        auto result = transform_all_to_vector<int>(vec, [](double x) { return static_cast<int>(x); });
+        auto result = transform_all_to_vector<int>(
+            vec, [](double x) { return static_cast<int>(x); });
         CHECK(result.size() == 3);
         CHECK(result == std::vector<int>{1, 2, 3});
     }
 
     TEST_CASE("transform_all_to_vector with strings") {
         std::vector<std::string> vec = {"hello", "world", "test"};
-        auto result = transform_all_to_vector<size_t>(vec, [](const std::string& s) { return s.length(); });
+        auto result = transform_all_to_vector<size_t>(
+            vec, [](const std::string& s) { return s.length(); });
         CHECK(result.size() == 3);
         CHECK(result == std::vector<size_t>{5, 5, 4});
     }
 
     TEST_CASE("transform_all_to_vector preserves original") {
         std::vector<int> vec = {1, 2, 3};
-        auto result = transform_all_to_vector<int>(vec, [](int x) { return x * 10; });
+        auto result =
+            transform_all_to_vector<int>(vec, [](int x) { return x * 10; });
         CHECK(vec == std::vector<int>{1, 2, 3});
         CHECK(result == std::vector<int>{10, 20, 30});
     }
@@ -517,7 +529,8 @@ TEST_SUITE("Transform All Operations") {
  */
 TEST_SUITE("Get Map Keys Operations") {
     TEST_CASE("get_map_keys from unordered_map") {
-        std::unordered_map<int, std::string> map = {{1, "one"}, {2, "two"}, {3, "three"}};
+        std::unordered_map<int, std::string> map = {
+            {1, "one"}, {2, "two"}, {3, "three"}};
         auto keys = get_map_keys(map);
         CHECK(keys.size() == 3);
         CHECK(keys.contains(1));
@@ -541,7 +554,8 @@ TEST_SUITE("Get Map Keys Operations") {
     }
 
     TEST_CASE("get_map_keys with string keys") {
-        std::unordered_map<std::string, int> map = {{"one", 1}, {"two", 2}, {"three", 3}};
+        std::unordered_map<std::string, int> map = {
+            {"one", 1}, {"two", 2}, {"three", 3}};
         auto keys = get_map_keys(map);
         CHECK(keys.size() == 3);
         CHECK(keys.contains("one"));
@@ -563,7 +577,8 @@ TEST_SUITE("Get Map Keys Operations") {
  */
 TEST_SUITE("Get Map Values Operations") {
     TEST_CASE("get_map_values from unordered_map") {
-        std::unordered_map<int, std::string> map = {{1, "one"}, {2, "two"}, {3, "three"}};
+        std::unordered_map<int, std::string> map = {
+            {1, "one"}, {2, "two"}, {3, "three"}};
         auto values = get_map_values(map);
         CHECK(values.size() == 3);
         CHECK(values.contains("one"));
@@ -587,7 +602,8 @@ TEST_SUITE("Get Map Values Operations") {
     }
 
     TEST_CASE("get_map_values with int values") {
-        std::unordered_map<std::string, int> map = {{"one", 1}, {"two", 2}, {"three", 3}};
+        std::unordered_map<std::string, int> map = {
+            {"one", 1}, {"two", 2}, {"three", 3}};
         auto values = get_map_values(map);
         CHECK(values.size() == 3);
         CHECK(values.contains(1));
@@ -596,7 +612,8 @@ TEST_SUITE("Get Map Values Operations") {
     }
 
     TEST_CASE("get_map_values duplicate values") {
-        std::unordered_map<int, std::string> map = {{1, "same"}, {2, "same"}, {3, "same"}};
+        std::unordered_map<int, std::string> map = {
+            {1, "same"}, {2, "same"}, {3, "same"}};
         auto values = get_map_values(map);
         CHECK(values.size() == 1);  // Only unique values
         CHECK(values.contains("same"));
@@ -687,15 +704,16 @@ TEST_SUITE("Merge Operations") {
 TEST_SUITE("Container Edge Cases") {
     TEST_CASE("operations on single element containers") {
         std::vector<int> vec = {42};
-        
+
         CHECK(contains(vec, 42) == true);
         CHECK(contains(vec, 0) == false);
-        
+
         auto sliced = slice(vec, 0, 1);
         CHECK(sliced.size() == 1);
         CHECK(sliced[0] == 42);
-        
-        auto transformed = transform_all_to_vector<int>(vec, [](int x) { return x * 2; });
+
+        auto transformed =
+            transform_all_to_vector<int>(vec, [](int x) { return x * 2; });
         CHECK(transformed.size() == 1);
         CHECK(transformed[0] == 84);
     }
@@ -705,10 +723,10 @@ TEST_SUITE("Container Edge Cases") {
         for (size_t i = 0; i < vec.size(); ++i) {
             vec[i] = static_cast<int>(i);
         }
-        
+
         CHECK(contains(vec, 500) == true);
         CHECK(contains(vec, 1000) == false);
-        
+
         auto sliced = slice(vec, 100, 200);
         CHECK(sliced.size() == 100);
         CHECK(sliced[0] == 100);
@@ -717,22 +735,22 @@ TEST_SUITE("Container Edge Cases") {
 
     TEST_CASE("container_slice boundary conditions") {
         std::vector<int> vec = {1, 2, 3, 4, 5};
-        
+
         auto start_slice = slice(vec, 0, 1);
         CHECK(start_slice.size() == 1);
         CHECK(start_slice[0] == 1);
-        
+
         auto end_slice = slice(vec, 4, 5);
         CHECK(end_slice.size() == 1);
         CHECK(end_slice[0] == 5);
-        
+
         auto empty_slice = slice(vec, 2, 2);
         CHECK(empty_slice.empty());
     }
 
     TEST_CASE("erase_if with complex conditions") {
         std::vector<int> vec = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-        
+
         erase_if(vec, [](int x) { return x > 3 && x < 8; });
         CHECK(vec == std::vector<int>{1, 2, 3, 8, 9, 10});
     }
@@ -740,16 +758,17 @@ TEST_SUITE("Container Edge Cases") {
     TEST_CASE("transform_all_to_vector with stateful lambda") {
         std::vector<int> vec = {1, 2, 3, 4, 5};
         int multiplier = 10;
-        auto result = transform_all_to_vector<int>(vec, [multiplier](int x) { return x * multiplier; });
+        auto result = transform_all_to_vector<int>(
+            vec, [multiplier](int x) { return x * multiplier; });
         CHECK(result == std::vector<int>{10, 20, 30, 40, 50});
     }
 
     TEST_CASE("merge with different types") {
         std::vector<int> vec1 = {1, 2};
         std::vector<double> vec2 = {3.5, 4.5};
-        
+
         // This should work with appropriate type conversion
-        auto merged = merge(vec1, vec1); // Same type merge
+        auto merged = merge(vec1, vec1);  // Same type merge
         CHECK(merged.size() == 4);
     }
 }
@@ -780,15 +799,15 @@ TEST_SUITE("At Operations") {
 
     TEST_CASE("at at boundary") {
         std::vector<int> vec = {10, 20, 30};
-        
+
         auto first = at(vec, 0);
         CHECK(first.has_value());
         CHECK(first.value() == 10);
-        
+
         auto last = at(vec, 2);
         CHECK(last.has_value());
         CHECK(last.value() == 30);
-        
+
         auto out_of_bounds = at(vec, 3);
         CHECK(!out_of_bounds.has_value());
     }
@@ -824,7 +843,7 @@ TEST_SUITE("At Operations") {
         std::vector<int> vec = {1, 2, 3, 4, 5};
         auto& ref = at_ref(vec, 2);
         CHECK(ref == 3);
-        
+
         // Modify through reference
         ref = 100;
         CHECK(vec[2] == 100);
@@ -852,7 +871,7 @@ TEST_SUITE("At Operations") {
         std::string str = "hello";
         auto& ref = at_ref(str, 1);
         CHECK(ref == 'e');
-        
+
         // Modify through reference
         ref = 'X';
         CHECK(str == "hXllo");
@@ -870,7 +889,7 @@ TEST_SUITE("At Operations") {
         CHECK(back_result.has_value());
         CHECK(back_result.value() == 42);
         CHECK(vec.empty());
-        
+
         std::list<int> lst = {42};
         auto front_result = pop_front_value(lst);
         CHECK(front_result.has_value());
@@ -878,13 +897,81 @@ TEST_SUITE("At Operations") {
         CHECK(lst.empty());
     }
 
+    TEST_CASE("choice from non-empty container") {
+        std::vector<int> vec = {1, 2, 3, 4, 5};
+        auto result = choice(vec);
+        CHECK(result.has_value());
+        CHECK(result.value() >= 1);
+        CHECK(result.value() <= 5);
+    }
+
+    TEST_CASE("choice from empty container") {
+        std::vector<int> empty_vec;
+        auto result = choice(empty_vec);
+        CHECK(!result.has_value());
+    }
+
+    TEST_CASE("choice from single element") {
+        std::vector<int> vec = {42};
+        auto result = choice(vec);
+        CHECK(result.has_value());
+        CHECK(result.value() == 42);
+    }
+
+    TEST_CASE("choice from string container") {
+        std::vector<std::string> words = {"hello", "world", "test"};
+        auto result = choice(words);
+        CHECK(result.has_value());
+        CHECK((result.value() == "hello" || result.value() == "world" ||
+               result.value() == "test"));
+    }
+
+    TEST_CASE("choice distribution") {
+        std::vector<int> vec = {1, 2, 3};
+        std::vector<int> counts(3, 0);
+        const int trials = 100;
+
+        for (int i = 0; i < trials; ++i) {
+            auto result = choice(vec);
+            if (result.has_value()) {
+                counts[result.value() - 1]++;
+            }
+        }
+
+        // Each element should be chosen at least once (with high probability)
+        for (int count : counts) {
+            CHECK(count > 0);
+        }
+    }
+
     TEST_CASE("map operations with complex keys") {
         std::map<std::pair<int, int>, std::string> map;
         map[{1, 2}] = "pair12";
         map[{3, 4}] = "pair34";
-        
+
         CHECK(map.size() == 2);
         CHECK(map[{1, 2}] == "pair12");
         CHECK(map[{3, 4}] == "pair34");
+    }
+
+    TEST_CASE("choice from non-empty container") {
+        std::vector<int> vec = {1, 2, 3, 4, 5};
+        auto result = choice(vec);
+        CHECK(result.has_value());
+        CHECK(result.value() >= 1);
+        CHECK(result.value() <= 5);
+    }
+
+    TEST_CASE("choice from empty container") {
+        std::vector<int> empty_vec;
+        auto result = choice(empty_vec);
+        CHECK(!result.has_value());
+    }
+
+    TEST_CASE("choice from single element") {
+        std::vector<int> vec = {42};
+        auto result = choice(vec);
+        CHECK(result.has_value());
+        CHECK(result.value() == 42);
     }
 }

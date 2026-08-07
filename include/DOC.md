@@ -380,6 +380,37 @@ auto detailed = get_today_time_detailed_str();  // "2026-07-26 14:30:45"
 sleep(2.5);  // Sleep for 2.5 seconds
 ```
 
+#### Countdown Timer
+
+```cpp
+// Create a countdown timer with 10 seconds
+CountDownTimer timer(10.0);
+timer.start();
+
+// Check remaining time
+if (auto remaining = timer.get_remaining_time()) {
+    write_a_line_to_console("Time left: {} seconds", *remaining);
+}
+
+// Check if finished
+if (auto finished = timer.is_finished()) {
+    if (*finished) {
+        write_a_line_to_console("Timer finished!");
+    }
+}
+
+// Pause and resume
+timer.pause();
+// ... do something else ...
+timer.resume();
+
+// Restart the timer
+timer.restart();
+
+// Reset with new time
+timer.reset(5.0);
+```
+
 ### Random Generation (`random_kits.hpp`)
 
 Random generation utilities provide convenient functions for generating random numbers.
@@ -450,6 +481,8 @@ Container utilities provide safe operations on standard containers.
 - Container slicing with step support
 - Safe container modification
 - Container transformation utilities
+- Random element selection
+- Safe indexed access with bounds checking
 
 #### Content Checking
 
@@ -508,6 +541,34 @@ auto merged = merge(numbers, more);  // {1, 3, 5, 7, 8, 9}
 std::vector<int> numbers = {1, 2, 3, 4, 5};
 auto squared = transform_all_to_vector<int>(numbers, [](int x) { return x * x; });
 // {1, 4, 9, 16, 25}
+```
+
+#### Random Element Selection
+
+```cpp
+std::vector<int> numbers = {1, 2, 3, 4, 5};
+auto random_elem = choice(numbers);  // Optional<int> with random element
+if (random_elem) {
+    write_a_line_to_console("Selected: {}", *random_elem);
+}
+```
+
+#### Safe Indexed Access
+
+```cpp
+std::vector<int> numbers = {1, 2, 3, 4, 5};
+
+// Optional-based access (no exception)
+auto elem = at(numbers, 2);  // Optional<int> containing 3
+auto out_of_range = at(numbers, 10);  // nullopt
+
+// Reference-based access (throws on out of range)
+try {
+    int& ref = at_ref(numbers, 2);  // 3
+    int& bad_ref = at_ref(numbers, 10);  // throws std::out_of_range
+} catch (const std::out_of_range& e) {
+    write_a_line_to_console("Error: {}", e.what());
+}
 ```
 
 ### Common Concepts (`common_concepts.hpp`)
@@ -577,6 +638,7 @@ Numerics utilities provide compile-time type selection and overflow-checked arit
 - Overflow-checked arithmetic operations
 - Platform-specific optimizations using intrinsics
 - Safe numeric operations with optional return types
+- Saturating cast operations for safe type conversion
 
 #### Compile-time Type Selection
 
@@ -631,6 +693,26 @@ if (auto sum = checked_add<int>(INT_MAX, 1)) {
 // - MSVC: _addcarry_u64, _subborrow_u64, _umul128
 // - GCC/Clang: __builtin_add_overflow, __builtin_sub_overflow, __builtin_mul_overflow
 // - Smaller types are promoted to larger types for safe calculation
+```
+
+#### Saturating Cast Operations
+
+```cpp
+// Integral to integral with saturation
+auto saturated = saturate_cast<uint8_t>(300);  // 255 (max value)
+auto saturated_neg = saturate_cast<int8_t>(-200);  // -128 (min value)
+
+// Floating point to integral with saturation
+auto from_float = saturate_cast<int>(3.7);  // 3
+auto from_large_float = saturate_cast<int>(1e20);  // INT_MAX
+auto from_nan = saturate_cast<int>(NAN);  // 0
+auto from_inf = saturate_cast<int>(INFINITY);  // INT_MAX
+
+// Integral to floating point
+auto to_double = saturate_cast<double>(42);  // 42.0
+
+// Floating point to floating point
+auto double_to_float = saturate_cast<float>(1e100);  // FLT_MAX
 ```
 
 ### RAII Utilities (`raii_kits.hpp`)
@@ -749,7 +831,7 @@ void update_records() {
 
 ### String Conversion (`string_converts.hpp`)
 
-String conversion utilities provide convenient range-to-string conversion.
+String conversion utilities provide convenient range-to-string conversion, byte operations, and numeric parsing.
 
 #### Range to String Conversion
 
@@ -762,6 +844,51 @@ auto str = convert_range_to_string(words);  // "{apple, banana, cherry}"
 
 std::map<std::string, int> map = {{"a", 1}, {"b", 2}};
 auto str = convert_range_to_string(map);  // "{a: 1, b: 2}"
+```
+
+#### Byte Conversion
+
+```cpp
+// Convert trivially copyable objects to bytes
+int value = 42;
+auto bytes = convert_to_bytes(value);
+
+// Convert string to bytes
+std::string text = "Hello";
+auto text_bytes = convert_to_bytes(text);
+
+// Convert span to bytes
+std::vector<int> data = {1, 2, 3};
+auto data_bytes = convert_to_bytes(std::span(data));
+```
+
+#### Hexadecimal Conversion
+
+```cpp
+// Convert byte to hex
+auto hex = convert_to_hex(std::byte{0xAB});  // "AB"
+
+// Convert byte span to hex
+std::vector<std::byte> data = {std::byte{0xAB}, std::byte{0xCD}};
+auto hex_str = convert_to_hex(std::span(data));  // "ABCD"
+
+// Convert string to hex
+std::string text = "Hi";
+auto hex_text = convert_to_hex(text);  // "4869"
+```
+
+#### Numeric String Conversion
+
+```cpp
+// Convert string to number
+auto result1 = try_convert_string_to_numerics<int>("123");   // 123
+auto result2 = try_convert_string_to_numerics<double>("3.14"); // 3.14
+auto result3 = try_convert_string_to_numerics<int>("abc");   // nullopt
+
+// Check if string is numeric
+bool is_num1 = is_numeric("123");    // true
+bool is_num2 = is_numeric("3.14");   // true
+bool is_num3 = is_numeric("hello");  // false
 ```
 
 ## API Reference
