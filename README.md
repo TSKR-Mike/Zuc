@@ -125,6 +125,7 @@ Tested on: GCC, Clang, MSVC (CI passes).
 
 ### I/O Operations (`io_kits.hpp`)
 - **File Handling** - `FileMgr` class for safe file operations with RAII
+- **File Writing** - `write_string()`, `write_a_line()`, `write_all()` for flexible file output
 - **Console I/O** - Formatted console output and input functions
 - **Line Reading** - Efficient line-by-line file reading with error handling
 - **Exception Safety** - Custom exceptions for file and I/O operations
@@ -140,6 +141,7 @@ Tested on: GCC, Clang, MSVC (CI passes).
 ### Random Generation (`random_kits.hpp`)
 - **Basic Random Numbers** - `random_int()`, `random_double()`, `random_long_long()`
 - **Sized Random Numbers** - `random_int32()`, `random_int64()` for specific bit widths
+- **Boolean Random Generation** - `random_true()`, `random_false()` for probability-based boolean generation
 - **Uniform Distribution** - Semantic aliases for uniform distribution functions
 - **Container Shuffling** - `shuffle()`, `shuffled()` for randomizing container order (random access only)
 - **Thread Safety** - Modern C++ random engine with proper seeding
@@ -491,8 +493,15 @@ try {
         write_a_line_to_console("Line: {}", line);
     }
     
-    // Formatted writing
-    file.write("Processing: {} items\n", lines.size());
+    // Write content without newline
+    file.write_string("Processing: {} items", lines.size());
+    
+    // Write content with automatic newline
+    file.write_a_line("Total lines: {}", lines.size());
+    
+    // Write multiple items, one per line
+    std::vector<std::string> items = {"item1", "item2", "item3"};
+    file.write_all(std::span(items));
     
 } catch (const FileException& e) {
     write_a_line_to_console("Error: {}", e.what());

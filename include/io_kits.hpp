@@ -296,24 +296,76 @@ class FileMgr {
     }
 
     /**
-     * @brief Write stringable content to file
+     * @brief Write stringable content to file without adding a newline
      * @param content Content to write (must satisfy Stringable concept)
      * @throws FileException if file is not open
-     * @note Automatically flushes after writing to ensure data is written
+     * @note Content is written as-is without any trailing newline character
+     * @note Use write_a_line() if you want automatic newline termination
+     * @example
+     * file.write_string("Hello");  // Writes "Hello" (no newline)
+     * file.write_string(" ");     // Writes " "
+     * file.write_string("World");  // Writes "World"
      */
-    void write(const Stringable auto& content) {
+    void write_string(const Stringable auto& content) {
         if (!is_valid()) {
             throw FileException("No file is opened");
         }
         std::string content_str = convert_stringable_to_string(content);
         file_ << content_str;
-        file_ << std::flush;
+    }
+
+    /**
+     * @brief Write formatted content to file without adding a newline using std::format syntax
+     * @param fmt Format string using C++20 std::format syntax
+     * @param args Arguments to format into the format string
+     * @throws FileException if file is not open or formatting fails
+     * @note Uses C++20 std::format for type-safe, flexible formatting
+     * @note The formatted content is written as-is without any trailing newline character
+     * @note Use write_a_line() if you want automatic newline termination
+     * @example
+     * file.write_string("Number: {}", 42);  // Writes "Number: 42" (no newline)
+     */
+    template <typename... Args>
+    void write_string(const std::format_string<Args...> fmt, Args&&... args) {
+        if (!is_valid()) {
+            throw FileException("No file is opened");
+        }
+        try {
+            std::string formatted_content =
+                std::format(fmt, std::forward<Args>(args)...);
+            write_string(formatted_content);
+        } catch (const std::format_error& e) {
+            throw FileException(std::format("Format error: {}", e.what()));
+        }
+    }
+
+    /**
+     * @brief Write stringable content to file followed by a newline
+     * @param content Content to write (must satisfy Stringable concept)
+     * @throws FileException if file is not open
+     * @note Content is written followed by a platform-appropriate newline character
+     * @note The file stream is not automatically flushed after each write for performance reasons
+     * @example
+     * file.write_a_line("Hello, World!");  // Writes "Hello, World!\n"
+     * file.write_a_line(42);                // Writes "42\n"
+     */
+    void write_a_line(const Stringable auto& content) {
+        if (!is_valid()) {
+            throw FileException("No file is opened");
+        }
+        std::string content_str = convert_stringable_to_string(content);
+        file_ << content_str;
+        file_ << std::endl;
     }
 
     /**
      * @brief Write multiple items to file, one per line
      * @param all_content Span of stringable items to write
-     * @note Each item is written on its own line
+     * @note Each item is written on its own line followed by a newline character
+     * @note If file is not valid, this function silently returns without throwing an exception
+     * @example
+     * std::vector<std::string> lines = {"Line 1", "Line 2", "Line 3"};
+     * file.write_all(std::span(lines));  // Writes each string on a separate line
      */
     template <Stringable T>
     void write_all(std::span<T> all_content) {
@@ -321,27 +373,29 @@ class FileMgr {
             return;
         }
         for (auto x : all_content) {
-            write(x);
-            write("\n");
+            write_a_line(x);
         }
     }
 
     /**
-     * @brief Write formatted content to file using std::format syntax
-     * @param fmt Format string
-     * @param args Arguments to format
+     * @brief Write formatted content to file followed by a newline using std::format syntax
+     * @param fmt Format string using C++20 std::format syntax
+     * @param args Arguments to format into the format string
      * @throws FileException if file is not open or formatting fails
      * @note Uses C++20 std::format for type-safe, flexible formatting
+     * @note The formatted content is written followed by a platform-appropriate newline character
+     * @example
+     * file.write_a_line("Number: {}, Text: '{}'", 42, "hello");  // Writes "Number: 42, Text: 'hello'\n"
      */
     template <typename... Args>
-    void write(const std::format_string<Args...> fmt, Args&&... args) {
+    void write_a_line(const std::format_string<Args...> fmt, Args&&... args) {
         if (!is_valid()) {
             throw FileException("No file is opened");
         }
         try {
             std::string formatted_content =
                 std::format(fmt, std::forward<Args>(args)...);
-            write(formatted_content);
+            write_a_line(formatted_content);
         } catch (const std::format_error& e) {
             throw FileException(std::format("Format error: {}", e.what()));
         }

@@ -514,11 +514,15 @@ class CountDownTimer {
             return std::nullopt;
         }
         if (paused_) {
-            return total_duration_.count() - time_passed_before_pause_.count();
+            double remaining = total_duration_.count() - time_passed_before_pause_.count();
+            return remaining >= 0.0 ? remaining : 0.0;
         }
-        auto elapsed = Clock::now() - start_time_;
-        auto remaining = total_duration_ - elapsed - time_passed_before_pause_;
-        if (remaining.count() <= 0) {
+        
+        // Calculate elapsed time as Duration (double seconds)
+        Duration elapsed = std::chrono::duration_cast<Duration>(Clock::now() - start_time_);
+        Duration remaining = total_duration_ - elapsed - time_passed_before_pause_;
+        
+        if (remaining.count() <= 0.0) {
             return 0.0;
         } else {
             return remaining.count();
@@ -572,10 +576,15 @@ class CountDownTimer {
         if (paused_) {
             remaining = total_duration_ - time_passed_before_pause_;
         } else {
-            auto elapsed = Clock::now() - start_time_;
+            // Calculate elapsed time as Duration (double seconds) for consistent arithmetic
+            Duration elapsed = std::chrono::duration_cast<Duration>(Clock::now() - start_time_);
             remaining = total_duration_ - elapsed - time_passed_before_pause_;
-        }  // Protect the result to be positive or 0
-        if (remaining < Duration::zero()) remaining = Duration::zero();
+        }
+        
+        // Protect the result to be positive or 0
+        if (remaining.count() < 0.0) {
+            remaining = Duration::zero();
+        }
         return remaining;
     }
 

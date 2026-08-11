@@ -245,11 +245,21 @@ try {
         // Read all lines
         auto lines = file.read_all();
         
-        // Write content
-        file.write("Hello, World!\n");
+        // Write content without newline
+        file.write_string("Hello, World!");
         
-        // Formatted writing
-        file.write("Processing: {} items\n", lines.size());
+        // Write content with automatic newline
+        file.write_a_line("This is a new line");
+        
+        // Formatted writing without newline
+        file.write_string("Processing: {} items", lines.size());
+        
+        // Formatted writing with automatic newline
+        file.write_a_line("Total lines: {}", lines.size());
+        
+        // Write multiple items, one per line
+        std::vector<std::string> items = {"item1", "item2", "item3"};
+        file.write_all(std::span(items));
     }
 } catch (const FileException& e) {
     std::cerr << "Error: " << e.what() << std::endl;
@@ -418,6 +428,7 @@ Random generation utilities provide convenient functions for generating random n
 **Key Features:**
 - Basic random number generation (int, double, long long)
 - Sized integer generation (int32, int64)
+- Boolean random generation with probability control
 - Uniform distribution semantic aliases
 - Modern C++ random engine with proper seeding
 - Thread-safe operations
@@ -452,6 +463,26 @@ int64_t random_64 = random_int64(INT64_MIN, INT64_MAX);
 auto uniform_int = uniform_random_int(1, 100);
 auto uniform_double = uniform_random_double(0.0, 1.0);
 ```
+
+#### Boolean Random Generation
+
+```cpp
+// Generate boolean with specified probability of being true
+bool should_proceed = random_true(0.7);  // 70% chance of true
+bool rare_event = random_true(0.01);     // 1% chance of true
+
+// Generate boolean with specified probability of being false
+bool should_skip = random_false(0.3);    // 30% chance of false, 70% chance of true
+bool common_event = random_false(0.99);  // 99% chance of false, 1% chance of true
+
+// Edge cases
+bool always_false = random_true(0.0);    // Always returns false
+bool always_true = random_true(1.0);     // Always returns true
+bool always_true_inverse = random_false(0.0);  // Always returns true (inverse)
+bool always_false_inverse = random_false(1.0); // Always returns false (inverse)
+```
+
+**Note:** `random_false(p)` is equivalent to `!random_true(p)`. The probability parameter should be between 0.0 and 1.0 for meaningful results, though the functions handle edge cases gracefully.
 
 #### Container Shuffling
 
@@ -924,7 +955,13 @@ bool is_num3 = is_numeric("hello");  // false
 | Class/Function | Description |
 |----------------|-------------|
 | `FileMgr` | RAII file management class |
+| `FileMgr::write_string(content)` | Write content without newline |
+| `FileMgr::write_string(fmt, ...)` | Write formatted content without newline |
+| `FileMgr::write_a_line(content)` | Write content with automatic newline |
+| `FileMgr::write_a_line(fmt, ...)` | Write formatted content with automatic newline |
+| `FileMgr::write_all(span)` | Write multiple items, one per line |
 | `write_string_to_console(fmt, ...)` | Formatted console output |
+| `write_a_line_to_console(fmt, ...)` | Formatted console output with newline |
 | `read_a_line_from_console(fmt, ...)` | Interactive console input |
 | `open_file(path)` | Safe file opening |
 
@@ -947,6 +984,8 @@ bool is_num3 = is_numeric("hello");  // false
 | `random_long_long(min, max)` | Random long long in range | `long long` |
 | `random_int32(min, max)` | Random 32-bit integer | `int32_t` |
 | `random_int64(min, max)` | Random 64-bit integer | `int64_t` |
+| `random_true(probability)` | Boolean with probability of being true | `bool` |
+| `random_false(probability)` | Boolean with probability of being false | `bool` |
 | `uniform_random_int(min, max)` | Uniform random integer | `int` |
 | `uniform_random_double(min, max)` | Uniform random double | `double` |
 | `shuffle(container)` | Shuffle container in place | `void` |

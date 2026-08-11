@@ -49,8 +49,7 @@ namespace zuc {
  * bool not_found = contains(vec, 6); // false
  */
 template <typename Range, typename U>
-    requires std::equality_comparable_with<get_rangelike_value_type<Range>,
-                                           U> &&
+    requires std::equality_comparable_with<get_rangelike_value_type<Range>, U> &&
              RangeLike<Range>
 constexpr bool contains(const Range& obj, const U& contain_obj) {
     if (std::empty(obj)) return false;

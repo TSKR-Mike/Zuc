@@ -19,8 +19,7 @@ add_executable(zuc_test
     test_common_concepts.cpp
     test_numerics_kits.cpp
 )
-
-# -----------------------------------------------------------------------------
-# Register with CTest (optional, for `ctest` command)
-# -----------------------------------------------------------------------------
 enable_testing()
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-instr-generate -fcoverage-mapping -O0 -g")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fprofile-instr-generate")
+add_test(NAME zuc_test COMMAND zuc_test)

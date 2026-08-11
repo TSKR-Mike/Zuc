@@ -593,3 +593,362 @@ TEST_SUITE("Time Edge Cases") {
         }));
     }
 }
+
+/**
+ * @test CountDownTimer Class
+ * Tests for CountDownTimer class functionality including countdown timing,
+ * pause/resume, restart, reset, and state management.
+ */
+TEST_SUITE("CountDownTimer Class") {
+    TEST_CASE("CountDownTimer construction") {
+        CountDownTimer timer(5.0);
+        CHECK(timer.get_total_count_down_time().count() == 5.0);
+        CHECK(timer.is_finished() == std::nullopt);
+        CHECK(timer.get_remaining_time() == std::nullopt);
+    }
+
+    TEST_CASE("CountDownTimer construction with zero") {
+        CountDownTimer timer(0.0);
+        CHECK(timer.get_total_count_down_time().count() == 0.0);
+    }
+
+    TEST_CASE("CountDownTimer start basic") {
+        CountDownTimer timer(1.0);
+        timer.start();
+        
+        CHECK(timer.is_finished().has_value());
+        CHECK(timer.is_finished().value() == false);
+        CHECK(timer.get_remaining_time().has_value());
+        CHECK(timer.get_remaining_time().value() > 0.0);
+        CHECK(timer.get_remaining_time().value() <= 1.0);
+    }
+
+    TEST_CASE("CountDownTimer start multiple times") {
+        CountDownTimer timer(2.0);
+        timer.start();
+        auto first_remaining = timer.get_remaining_time();
+        
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        
+        timer.start(); // Should restart
+        auto second_remaining = timer.get_remaining_time();
+        
+        // After restart, remaining time should be close to total duration
+        CHECK(second_remaining.value() > 1.9);
+        CHECK(second_remaining.value() <= 2.0);
+    }
+
+    TEST_CASE("CountDownTimer pause and resume") {
+        CountDownTimer timer(2.0);
+        timer.start();
+        
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        auto before_pause = timer.get_remaining_time();
+        
+        timer.pause();
+        auto paused_remaining = timer.get_remaining_time();
+        
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        auto still_paused = timer.get_remaining_time();
+        
+        CHECK(paused_remaining.has_value());
+        CHECK(still_paused.has_value());
+        CHECK(std::abs(still_paused.value() - paused_remaining.value()) < 0.01);
+        
+        timer.resume();
+        auto after_resume = timer.get_remaining_time();
+        CHECK(after_resume.has_value());
+    }
+
+    TEST_CASE("CountDownTimer restart") {
+        CountDownTimer timer(1.0);
+        timer.start();
+        
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        auto half_time = timer.get_remaining_time();
+        CHECK(half_time.value() < 0.6);
+        CHECK(half_time.value() > 0.4);
+        
+        timer.restart();
+        auto restarted = timer.get_remaining_time();
+        CHECK(restarted.value() > 0.95);
+    }
+
+    TEST_CASE("CountDownTimer reset") {
+        CountDownTimer timer(1.0);
+        timer.start();
+        
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        timer.reset(2.0);
+        
+        CHECK(timer.get_total_count_down_time().count() == 2.0);
+        CHECK(timer.is_finished() == std::nullopt);
+        CHECK(timer.get_remaining_time() == std::nullopt);
+    }
+
+    TEST_CASE("CountDownTimer completion") {
+        CountDownTimer timer(0.1);
+        timer.start();
+        
+        CHECK(timer.is_finished().value() == false);
+        
+        std::this_thread::sleep_for(std::chrono::milliseconds(150));
+        
+        CHECK(timer.is_finished().value() == true);
+        CHECK(timer.get_remaining_time().value() <= 0.0);
+    }
+
+    TEST_CASE("CountDownTimer get_remaining_duration") {
+        CountDownTimer timer(1.0);
+        timer.start();
+        
+        auto duration = timer.get_remaining_duration();
+        CHECK(duration.has_value());
+        CHECK(duration.value().count() > 0.0);
+        CHECK(duration.value().count() <= 1.0);
+    }
+
+    TEST_CASE("CountDownTimer get_remaining_duration when paused") {
+        CountDownTimer timer(1.0);
+        timer.start();
+        
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        timer.pause();
+        
+        auto paused_duration = timer.get_remaining_duration();
+        CHECK(paused_duration.has_value());
+        
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        auto still_paused_duration = timer.get_remaining_duration();
+        
+        CHECK(paused_duration.value() == still_paused_duration.value());
+    }
+
+    TEST_CASE("CountDownTimer pause without start") {
+        CountDownTimer timer(1.0);
+        timer.pause(); // Should have no effect
+        CHECK(timer.is_finished() == std::nullopt);
+    }
+
+    TEST_CASE("CountDownTimer resume without pause") {
+        CountDownTimer timer(1.0);
+        timer.start();
+        timer.resume(); // Should have no effect
+        CHECK(timer.is_finished().value() == false);
+    }
+
+    TEST_CASE("CountDownTimer multiple pauses") {
+        CountDownTimer timer(1.0);
+        timer.start();
+        
+        timer.pause();
+        timer.pause(); // Should remain paused
+        CHECK(timer.get_remaining_time().has_value());
+    }
+
+    TEST_CASE("CountDownTimer start after pause") {
+        CountDownTimer timer(1.0);
+        timer.start();
+        
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        timer.pause();
+        
+        auto paused_remaining = timer.get_remaining_time();
+        
+        timer.start(); // Should resume
+        auto after_start = timer.get_remaining_time();
+        
+        CHECK(after_start.has_value());
+        // After resume, the remaining time should be close to what it was when paused
+        CHECK(std::abs(after_start.value() - paused_remaining.value()) < 0.1);
+    }
+
+    TEST_CASE("CountDownTimer timing accuracy") {
+        CountDownTimer timer(0.5);
+        timer.start();
+        
+        std::this_thread::sleep_for(std::chrono::milliseconds(250));
+        auto quarter_time = timer.get_remaining_time();
+        CHECK(quarter_time.value() > 0.2);
+        CHECK(quarter_time.value() < 0.3);
+        
+        std::this_thread::sleep_for(std::chrono::milliseconds(250));
+        auto near_end = timer.get_remaining_time();
+        CHECK(near_end.value() <= 0.05);
+        CHECK(near_end.value() >= 0.0);
+    }
+
+    TEST_CASE("CountDownTimer long duration") {
+        CountDownTimer timer(10.0);
+        timer.start();
+        
+        auto initial = timer.get_remaining_time();
+        CHECK(initial.value() > 9.9);
+        
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        auto after_100ms = timer.get_remaining_time();
+        CHECK(after_100ms.value() < initial.value());
+    }
+
+    TEST_CASE("CountDownTimer reset while running") {
+        CountDownTimer timer(1.0);
+        timer.start();
+        
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        timer.reset(0.5);
+        
+        CHECK(timer.get_total_count_down_time().count() == 0.5);
+        CHECK(timer.is_finished() == std::nullopt);
+        
+        timer.start();
+        CHECK(timer.get_remaining_time().value() > 0.4);
+    }
+
+    TEST_CASE("CountDownTimer negative remaining time protection") {
+        CountDownTimer timer(0.05);
+        timer.start();
+        
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        auto remaining = timer.get_remaining_time();
+        
+        CHECK(remaining.value() >= 0.0);
+        CHECK(remaining.value() <= 0.01);
+    }
+
+    TEST_CASE("CountDownTimer state transitions") {
+        CountDownTimer timer(1.0);
+        
+        // Initial state
+        CHECK(timer.is_finished() == std::nullopt);
+        
+        // After start
+        timer.start();
+        CHECK(timer.is_finished().value() == false);
+        
+        // After pause
+        timer.pause();
+        CHECK(timer.is_finished().value() == false);
+        
+        // After resume
+        timer.resume();
+        CHECK(timer.is_finished().value() == false);
+        
+        // After completion
+        std::this_thread::sleep_for(std::chrono::milliseconds(1100));
+        CHECK(timer.is_finished().value() == true);
+    }
+
+    TEST_CASE("CountDownTimer copy construction") {
+        CountDownTimer timer1(1.0);
+        timer1.start();
+        
+        CountDownTimer timer2(timer1);
+        CHECK(timer2.get_total_count_down_time().count() == 1.0);
+    }
+
+    TEST_CASE("CountDownTimer copy assignment") {
+        CountDownTimer timer1(2.0);
+        timer1.start();
+        
+        CountDownTimer timer2(0.5);
+        timer2 = timer1;
+        CHECK(timer2.get_total_count_down_time().count() == 2.0);
+    }
+
+    TEST_CASE("CountDownTimer move construction") {
+        CountDownTimer timer1(1.0);
+        timer1.start();
+        
+        CountDownTimer timer2(std::move(timer1));
+        CHECK(timer2.get_total_count_down_time().count() == 1.0);
+    }
+
+    TEST_CASE("CountDownTimer move assignment") {
+        CountDownTimer timer1(2.0);
+        timer1.start();
+        
+        CountDownTimer timer2(0.5);
+        timer2 = std::move(timer1);
+        CHECK(timer2.get_total_count_down_time().count() == 2.0);
+    }
+
+    TEST_CASE("CountDownTimer very short duration") {
+        CountDownTimer timer(0.001);
+        timer.start();
+        
+        CHECK(timer.is_finished().value() == false);
+        
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        CHECK(timer.is_finished().value() == true);
+    }
+
+    TEST_CASE("CountDownTimer reset to zero") {
+        CountDownTimer timer(1.0);
+        timer.start();
+        
+        timer.reset(0.0);
+        CHECK(timer.get_total_count_down_time().count() == 0.0);
+        
+        timer.start();
+        CHECK(timer.is_finished().value() == true);
+    }
+
+    TEST_CASE("CountDownTimer get_remaining_duration vs get_remaining_time") {
+        CountDownTimer timer(1.0);
+        timer.start();
+        
+        auto duration = timer.get_remaining_duration();
+        auto time = timer.get_remaining_time();
+        
+        CHECK(duration.has_value());
+        CHECK(time.has_value());
+        // Both should return approximately the same value
+        CHECK(std::abs(duration.value().count() - time.value()) < 0.01);
+    }
+
+    TEST_CASE("CountDownTimer pause resume timing accuracy") {
+        CountDownTimer timer(1.0);
+        timer.start();
+        
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        timer.pause();
+        
+        auto paused_time = timer.get_remaining_time();
+        
+        std::this_thread::sleep_for(std::chrono::milliseconds(300));
+        
+        timer.resume();
+        
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        
+        auto final_time = timer.get_remaining_time();
+        
+        // Should have approximately 0.6 seconds remaining (1.0 - 0.2 - 0.2)
+        CHECK(final_time.value() > 0.55);
+        CHECK(final_time.value() < 0.7); // Increased tolerance for timing variations
+    }
+
+    TEST_CASE("CountDownTimer restart after completion") {
+        CountDownTimer timer(0.1);
+        timer.start();
+        
+        std::this_thread::sleep_for(std::chrono::milliseconds(150));
+        CHECK(timer.is_finished().value() == true);
+        
+        timer.restart();
+        CHECK(timer.is_finished().value() == false);
+        CHECK(timer.get_remaining_time().value() > 0.09);
+    }
+
+    TEST_CASE("CountDownTimer multiple restarts") {
+        CountDownTimer timer(0.5);
+        
+        for (int i = 0; i < 3; ++i) {
+            timer.restart();
+            CHECK(timer.is_finished().value() == false);
+            CHECK(timer.get_remaining_time().value() > 0.45);
+            
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+    }
+}

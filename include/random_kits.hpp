@@ -182,5 +182,30 @@ Container shuffled(Container c) {
     return c;
 }
 
+/**
+ * @brief Generate a boolean value with specified probability of being true
+ * @param probability Probability of returning true (0.0 to 1.0)
+ * @return true with given probability, false otherwise
+ * @note Uses uniform distribution in [0.0, 1.0) range
+ * @note Probability should be between 0.0 and 1.0 for meaningful results
+ * @example
+ * bool result = random_true(0.7); // 70% chance of true
+ */
+inline bool random_true(double probability) {
+    return uniform_random_double(0.0, 1.0) < probability;
+}
+
+/**
+ * @brief Generate a boolean value with specified probability of being false
+ * @param probability Probability of returning false (0.0 to 1.0)
+ * @return false with given probability, true otherwise
+ * @note This is the inverse of random_true()
+ * @note Probability should be between 0.0 and 1.0 for meaningful results
+ * @example
+ * bool result = random_false(0.3); // 30% chance of false, 70% chance of true
+ */
+inline bool random_false(double probability) {
+    return !random_true(probability);
+}
 
 }  // namespace zuc

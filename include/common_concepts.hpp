@@ -239,16 +239,4 @@ constexpr decltype(auto) optimal_cast(From&& from) noexcept(
     return static_cast<To>(std::forward<From>(from));
 }
 
-template <typename T, typename U>
-concept DirectComparable =
-    requires(T&& t, U&& u) { std::same_as<decltype(t == u), bool>; };
-
-template <typename T, typename U>
-concept ExplicitConvertedComparable =
-    requires { CastableTo<T, U> || CastableTo<U, T>; };
-
-template <typename T, typename U>
-concept Comparable =
-    requires { DirectComparable<T, U> || ExplicitConvertedComparable<T, U>; };
-
 }  // namespace zuc

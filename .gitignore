@@ -8,3 +8,5 @@ build/**
 test_cross_plantform.bat
 NUL.obj
 .vscode/**
+coverage.xml
+gen_coverage.bat
