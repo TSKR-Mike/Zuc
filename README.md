@@ -683,7 +683,7 @@ Tested and verified on:
 - `is_numeric()` - Check if string represents a number
 
 ## ⚠️ Limitations
-- For types that can't be stored in std::optional (e.g., references), zuc::find(and other functions that return optional) currently returns a copy. We're exploring C++26's std::optional improvements.
-- C++20 modules are experimental and not yet fully supported.
+- For types that can't be stored in std::optional (e.g., references), functions that return optional currently returns a copy. We're exploring C++26's std::optional improvements.
+- C++20 modules are experimental and I will add support for them in future versions as soon as they are fully supported. Right now the lib only supports header-only.
 
 *"Built for convenience, designed for developers who value their time."*
