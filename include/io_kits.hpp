@@ -302,11 +302,11 @@ class FileMgr {
      * @note Content is written as-is without any trailing newline character
      * @note Use write_a_line() if you want automatic newline termination
      * @example
-     * file.write_string("Hello");  // Writes "Hello" (no newline)
-     * file.write_string(" ");     // Writes " "
-     * file.write_string("World");  // Writes "World"
+     * file.write_a_string("Hello");  // Writes "Hello" (no newline)
+     * file.write_a_string(" ");     // Writes " "
+     * file.write_a_string("World");  // Writes "World"
      */
-    void write_string(const Stringable auto& content) {
+    void write_a_string(const Stringable auto& content) {
         if (!is_valid()) {
             throw FileException("No file is opened");
         }
@@ -323,17 +323,17 @@ class FileMgr {
      * @note The formatted content is written as-is without any trailing newline character
      * @note Use write_a_line() if you want automatic newline termination
      * @example
-     * file.write_string("Number: {}", 42);  // Writes "Number: 42" (no newline)
+     * file.write_a_string("Number: {}", 42);  // Writes "Number: 42" (no newline)
      */
     template <typename... Args>
-    void write_string(const std::format_string<Args...> fmt, Args&&... args) {
+    void write_a_string(const std::format_string<Args...> fmt, Args&&... args) {
         if (!is_valid()) {
             throw FileException("No file is opened");
         }
         try {
             std::string formatted_content =
                 std::format(fmt, std::forward<Args>(args)...);
-            write_string(formatted_content);
+            write_a_string(formatted_content);
         } catch (const std::format_error& e) {
             throw FileException(std::format("Format error: {}", e.what()));
         }

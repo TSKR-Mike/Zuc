@@ -125,7 +125,7 @@ Tested on: GCC, Clang, MSVC (CI passes).
 
 ### I/O Operations (`io_kits.hpp`)
 - **File Handling** - `FileMgr` class for safe file operations with RAII
-- **File Writing** - `write_string()`, `write_a_line()`, `write_all()` for flexible file output
+- **File Writing** - `write_a_string()`, `write_a_line()`, `write_all()` for flexible file output
 - **Console I/O** - Formatted console output and input functions
 - **Line Reading** - Efficient line-by-line file reading with error handling
 - **Exception Safety** - Custom exceptions for file and I/O operations
@@ -494,7 +494,7 @@ try {
     }
     
     // Write content without newline
-    file.write_string("Processing: {} items", lines.size());
+    file.write_a_string("Processing: {} items", lines.size());
     
     // Write content with automatic newline
     file.write_a_line("Total lines: {}", lines.size());

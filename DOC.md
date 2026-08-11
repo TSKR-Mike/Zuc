@@ -246,13 +246,13 @@ try {
         auto lines = file.read_all();
         
         // Write content without newline
-        file.write_string("Hello, World!");
+        file.write_a_string("Hello, World!");
         
         // Write content with automatic newline
         file.write_a_line("This is a new line");
         
         // Formatted writing without newline
-        file.write_string("Processing: {} items", lines.size());
+        file.write_a_string("Processing: {} items", lines.size());
         
         // Formatted writing with automatic newline
         file.write_a_line("Total lines: {}", lines.size());
@@ -955,8 +955,8 @@ bool is_num3 = is_numeric("hello");  // false
 | Class/Function | Description |
 |----------------|-------------|
 | `FileMgr` | RAII file management class |
-| `FileMgr::write_string(content)` | Write content without newline |
-| `FileMgr::write_string(fmt, ...)` | Write formatted content without newline |
+| `FileMgr::write_a_string(content)` | Write content without newline |
+| `FileMgr::write_a_string(fmt, ...)` | Write formatted content without newline |
 | `FileMgr::write_a_line(content)` | Write content with automatic newline |
 | `FileMgr::write_a_line(fmt, ...)` | Write formatted content with automatic newline |
 | `FileMgr::write_all(span)` | Write multiple items, one per line |
@@ -1069,7 +1069,7 @@ int main() {
         // Write processed data
         FileMgr output("processed.txt", std::ios::out);
         for (const auto& line : processed) {
-            output.write("{}\n", line);
+            output.write_a_line("{}", line);
         }
         
         write_a_line_to_console("Processed {} lines", processed.size());

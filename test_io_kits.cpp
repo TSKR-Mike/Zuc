@@ -54,7 +54,7 @@ TEST_SUITE("File Operations") {
         {
             FileMgr format_file(test_file, std::ios::out);
             REQUIRE(format_file.is_valid());
-            format_file.write_string("Number: {}, String: {}\n", 42, "hello");
+            format_file.write_a_string("Number: {}, String: {}\n", 42, "hello");
             format_file.close();
         }
 
@@ -154,9 +154,9 @@ TEST_SUITE("File Operations") {
 
         {
             FileMgr file(test_file, std::ios::out);
-            file.write_string("Initial content");
+            file.write_a_string("Initial content");
             file.reset_write_pointer_to_front();
-            file.write_string("New content");
+            file.write_a_string("New content");
         }
 
         {
@@ -174,7 +174,7 @@ TEST_SUITE("File Operations") {
 
         {
             FileMgr file1(test_file, std::ios::out);
-            file1.write_string("Content from file1");
+            file1.write_a_string("Content from file1");
 
             FileMgr file2 = std::move(file1);
             CHECK(file2.is_valid() == true);
@@ -215,12 +215,12 @@ TEST_SUITE("File Operations") {
 
         {
             FileMgr file(test_file, std::ios::out);
-            file.write_string("Initial ");
+            file.write_a_string("Initial ");
         }
 
         {
             FileMgr file(test_file, std::ios::app);
-            file.write_string("appended content");
+            file.write_a_string("appended content");
         }
 
         {
@@ -239,7 +239,7 @@ TEST_SUITE("File Operations") {
         {
             FileMgr file(test_file, std::ios::out);
             for (int i = 0; i < 10; ++i) {
-                file.write_string("Line {}\n", i);
+                file.write_a_string("Line {}\n", i);
             }
         }
 
@@ -262,7 +262,7 @@ TEST_SUITE("File Operations") {
         {
             FileMgr file(test_file, std::ios::out);
             for (int i = 0; i < line_count; ++i) {
-                file.write_string("This is line number {} with some content\n", i);
+                file.write_a_string("This is line number {} with some content\n", i);
             }
         }
 
@@ -472,7 +472,7 @@ TEST_SUITE("File Edge Cases") {
 
         {
             FileMgr file(test_file, std::ios::out | std::ios::binary);
-            file.write_string("Line 1\r\nLine 2\r\nLine 3\r\n");
+            file.write_a_string("Line 1\r\nLine 2\r\nLine 3\r\n");
         }
 
         {
@@ -501,7 +501,7 @@ TEST_SUITE("File Edge Cases") {
 
         {
             FileMgr file(test_file, std::ios::out | std::ios::binary);
-            file.write_string("Unix\nWindows\r\nMac\r");
+            file.write_a_string("Unix\nWindows\r\nMac\r");
         }
 
         {
@@ -527,7 +527,7 @@ TEST_SUITE("File Edge Cases") {
 
         {
             FileMgr file(test_file, std::ios::out | std::ios::binary);
-            file.write_string("Content\r");
+            file.write_a_string("Content\r");
         }
 
         {
@@ -546,7 +546,7 @@ TEST_SUITE("File Edge Cases") {
 
         {
             FileMgr file(test_file, std::ios::out | std::ios::binary);
-            file.write_string("Line 1\r\nLine 2\r\nLine 3\r\n");
+            file.write_a_string("Line 1\r\nLine 2\r\nLine 3\r\n");
         }
 
         {
