@@ -30,8 +30,9 @@ std::string convert_stringable_to_string(const T& v) {
     if constexpr (std::constructible_from<std::string, T>) {
         return std::string(v);
     } else {
-        static_assert(std::integral<T> || std::floating_point<T>, 
-                      "Type must be constructible from std::string or be numeric for std::to_string");
+        static_assert(std::integral<T> || std::floating_point<T>,
+                      "Type must be constructible from std::string or be "
+                      "numeric for std::to_string");
         return std::to_string(v);
     }
 }
@@ -39,7 +40,8 @@ std::string convert_stringable_to_string(const T& v) {
 // Substring / slicing (non‑allocating views)
 
 /**
- * @brief Returns a view of a substring starting at pos, taking at most count chars
+ * @brief Returns a view of a substring starting at pos, taking at most count
+ * chars
  * @param s     Input string view
  * @param pos   Start index (must be <= s.size())
  * @param count Maximum number of characters to take (default 1)
@@ -170,10 +172,10 @@ inline std::string get_trimmed(const std::string& s) {
  * @brief Splits a string view by a single delimiter char into a vector of views
  * @param s     Input view
  * @param delim Delimiter character (if '\0', returns empty)
- * @return      Vector of views; empty parts preserved. Returns empty if s.empty() or delim == '\0'
+ * @return      Vector of views; empty parts preserved. Returns empty if
+ * s.empty() or delim == '\0'
  */
-inline std::vector<std::string_view> split(std::string_view s,
-                                           char delim) noexcept {
+inline std::vector<std::string_view> split(std::string_view s, char delim) {
     if (s.empty() || delim == '\0') {
         return {};
     }
@@ -189,13 +191,15 @@ inline std::vector<std::string_view> split(std::string_view s,
 }
 
 /**
- * @brief Splits a string view by a multi‑character delimiter into a vector of views
+ * @brief Splits a string view by a multi‑character delimiter into a vector of
+ * views
  * @param s     Input view
  * @param delim Delimiter string (must not be empty)
- * @return      Vector of views; empty parts preserved. Returns empty if s.empty() or delim.empty()
+ * @return      Vector of views; empty parts preserved. Returns empty if
+ * s.empty() or delim.empty()
  */
 inline std::vector<std::string_view> split(std::string_view s,
-                                           std::string_view delim) noexcept {
+                                           std::string_view delim) {
     if (s.empty() || delim.empty()) {
         return {};
     }
@@ -211,10 +215,13 @@ inline std::vector<std::string_view> split(std::string_view s,
 }
 
 /**
- * @brief Splits a string by any of the characters in delims, returning std::string copies
+ * @brief Splits a string by any of the characters in delims, returning
+ * std::string copies
  * @param s      Input view
- * @param delims Set of delimiter characters (can be empty → returns whole string)
- * @return       Vector of strings; empty parts preserved. Returns empty if s.empty()
+ * @param delims Set of delimiter characters (can be empty → returns whole
+ * string)
+ * @return       Vector of strings; empty parts preserved. Returns empty if
+ * s.empty()
  */
 inline std::vector<std::string> split_by_any(std::string_view s,
                                              std::string_view delims) {
@@ -267,25 +274,33 @@ inline std::vector<std::string> split_to_string(std::string_view s,
  * @return          Concatenated result; empty if strings is empty
  * @note            Memory is pre‑reserved to avoid reallocations
  */
-inline std::string join(std::span<const std::string_view> strings,
-                        std::string_view delimiter = "") {
-    if (strings.empty()) {
+inline std::string join(
+    RangeLikeElemTypeSpecified<std::string_view> auto const& strings,
+    std::string_view delimiter = "") {
+    auto begin_it = std::begin(strings);
+    auto end_it = std::end(strings);
+
+    if (begin_it == end_it) {
         return {};
     }
+
     size_t total = 0;
     for (const auto& sv : strings) {
         total += sv.size();
     }
-    total += (strings.size() - 1) * delimiter.size();
+    total += (get_rangelike_size(strings) - 1) * delimiter.size();
 
     std::string result;
     result.reserve(total);
 
-    for (size_t i = 0; i < strings.size(); ++i) {
-        result.append(strings[i].data(), strings[i].size());
-        if (i + 1 < strings.size()) {
+    size_t i = 0;
+    size_t size = get_rangelike_size(strings);
+    for (const auto& sv : strings) {
+        result.append(sv.data(), sv.size());
+        if (i + 1 < size) {
             result.append(delimiter.data(), delimiter.size());
         }
+        ++i;
     }
     return result;
 }
@@ -410,12 +425,18 @@ inline bool contains(std::string_view s,
  * @brief Checks if a string contains any of the given substrings
  * @param s            String to search in
  * @param contain_strs Span of substrings
- * @return             true if at least one is found; false if s empty or span empty
+ * @return             true if at least one is found; false if s empty or span
+ * empty
  */
 inline bool contains_any(
-    std::string_view s,
-    std::span<const std::string_view> contain_strs) noexcept {
-    if (s.empty() || contain_strs.empty()) {
+    std::string_view s, RangeLikeElemTypeSpecified<std::string_view> auto const&
+                            contain_strs) noexcept {
+    if (s.empty()) {
+        return false;
+    }
+    auto begin_it = std::begin(contain_strs);
+    auto end_it = std::end(contain_strs);
+    if (begin_it == end_it) {
         return false;
     }
     for (const auto& sub : contain_strs) {
@@ -426,6 +447,12 @@ inline bool contains_any(
     return false;
 }
 
+inline bool contains_any(
+    std::string_view s,
+    std::initializer_list<std::string_view> contain_strs) noexcept {
+    return contains_any(s, std::span<const std::string_view>(contain_strs));
+}
+
 /**
  * @brief Checks if a string contains all given substrings
  * @param s            String to search in
@@ -434,9 +461,14 @@ inline bool contains_any(
  */
 
 inline bool contains_all(
-    std::string_view s,
-    std::span<const std::string_view> contain_strs) noexcept {
-    if (s.empty() || contain_strs.empty()) {
+    std::string_view s, RangeLikeElemTypeSpecified<std::string_view> auto const&
+                            contain_strs) noexcept {
+    if (s.empty()) {
+        return false;
+    }
+    auto begin_it = std::begin(contain_strs);
+    auto end_it = std::end(contain_strs);
+    if (begin_it == end_it) {
         return false;
     }
     for (const auto& sub : contain_strs) {
@@ -447,6 +479,12 @@ inline bool contains_all(
     return true;
 }
 
+inline bool contains_all(
+    std::string_view s,
+    std::initializer_list<std::string_view> contain_strs) noexcept {
+    return contains_all(s, std::span<const std::string_view>(contain_strs));
+}
+
 // Replace / Remove (in‑place and copy versions)
 
 /**
@@ -454,7 +492,10 @@ inline bool contains_all(
  * @param s       String to modify
  * @param old_str Substring to replace (must not be empty)
  * @param new_str Replacement string
- * @note          Does nothing if s.empty() or old_str.empty(). Does not recursively replace inserted text
+ * @note          Does nothing if s.empty() or old_str.empty().
+ *                Does not recursively replace inserted text.
+ *                For overlapping patterns, only non-overlapping occurrences are
+ * replaced. Example: replace_all("aaa", "aa", "b") results in "ba" (not "bb").
  */
 inline void replace_all(std::string& s, std::string_view old_str,
                         std::string_view new_str) {
@@ -465,12 +506,13 @@ inline void replace_all(std::string& s, std::string_view old_str,
     while ((pos = s.find(old_str, pos)) != std::string::npos) {
         s.replace(pos, old_str.length(), new_str);
         pos +=
-            old_str.length();  // skip the replaced part to avoid infinite loop
+            new_str.length();  // skip the replaced part to avoid infinite loop
     }
 }
 
 /**
- * @brief Returns a copy of s with all occurrences of old_str replaced by new_str
+ * @brief Returns a copy of s with all occurrences of old_str replaced by
+ * new_str
  * @param s       Original string
  * @param old_str Substring to replace (must not be empty)
  * @param new_str Replacement string
@@ -483,10 +525,11 @@ inline std::string get_all_replaced(std::string s, std::string_view old_str,
 }
 
 /**
- * @brief Removes all occurrences of a substring from a string in‑place
+ * @brief Removes all **non-overlapping** occurrences of a substring in‑place
  * @param s                String to modify
  * @param str_to_be_removed Substring to remove (must not be empty)
  * @return                 Reference to the modified string
+ * @example                remove_all("aaaa", "aa") → "aa" (not empty)
  */
 inline std::string& remove_all(std::string& s,
                                std::string_view str_to_be_removed) {
@@ -505,17 +548,30 @@ inline std::string& remove_all(std::string& s,
  * @param s                   String to modify
  * @param strs_to_be_removed  Span of substrings to remove
  * @return                    Reference to the modified string
- * @note                      Removal order is sequential; overlapping patterns may interact
+ * @note                      Removal order is sequential; overlapping patterns
+ * may interact
  */
 inline std::string& remove_all(
-    std::string& s, std::span<const std::string_view> strs_to_be_removed) {
-    if (s.empty() || strs_to_be_removed.empty()) {
+    std::string& s, RangeLikeElemTypeSpecified<std::string_view> auto const&
+                        strs_to_be_removed) {
+    if (s.empty()) {
+        return s;
+    }
+    auto begin_it = std::begin(strs_to_be_removed);
+    auto end_it = std::end(strs_to_be_removed);
+    if (begin_it == end_it) {
         return s;
     }
     for (const auto& pat : strs_to_be_removed) {
         remove_all(s, pat);
     }
     return s;
+}
+
+inline std::string& remove_all(
+    std::string& s,
+    std::initializer_list<std::string_view> strs_to_be_removed) {
+    return remove_all(s, std::span<const std::string_view>(strs_to_be_removed));
 }
 
 /**
@@ -525,7 +581,8 @@ inline std::string& remove_all(
  * @return                    New string with removals applied
  */
 inline std::string get_all_removed(
-    std::string s, std::span<const std::string_view> strs_to_be_removed) {
+    std::string s, RangeLikeElemTypeSpecified<std::string_view> auto const&
+                       strs_to_be_removed) {
     remove_all(s, strs_to_be_removed);
     return s;
 }
@@ -541,6 +598,13 @@ inline std::string get_all_removed(std::string s,
     remove_all(s, str_to_be_removed);
     return s;
 }
+
+inline std::string get_all_removed(
+    std::string s, std::initializer_list<std::string_view> strs_to_be_removed) {
+    return get_all_removed(
+        s, std::span<const std::string_view>(strs_to_be_removed));
+}
+
 /**
  * @brief Returns a copy of s that repeats according to the given number
  * @param s      The string to be repeated
@@ -560,9 +624,12 @@ inline std::string repeat(const std::string& s, size_t times) {
 }
 
 template <Stringable T>
-inline bool match_any(const T& string_obj,
-                      std::span<const std::string_view> all_targets) noexcept {
-    if (all_targets.empty()) {
+inline bool match_any(
+    const T& string_obj,
+    RangeLikeElemTypeSpecified<std::string_view> auto const& all_targets) {
+    auto begin_it = std::begin(all_targets);
+    auto end_it = std::end(all_targets);
+    if (begin_it == end_it) {
         return false;
     }
     std::string str = convert_stringable_to_string(string_obj);
@@ -575,17 +642,20 @@ inline bool match_any(const T& string_obj,
 }
 
 template <Stringable T>
-inline bool match_any(
-    const T& string_obj,
-    std::initializer_list<std::string_view> all_targets) noexcept {
+inline bool match_any(const T& string_obj,
+                      std::initializer_list<std::string_view> all_targets) {
     return match_any(string_obj,
                      std::span<const std::string_view>(all_targets));
 }
-
-inline std::string_view to_string_view(std::span<const char> s) noexcept {
+template <typename Container>
+    requires requires(const Container& c) {
+        { c.data() } -> std::convertible_to<const char*>;
+        { c.size() } -> std::convertible_to<size_t>;
+    }
+inline std::string_view to_string_view(const Container& s) {
+    if (s.size() == 0) {
+        return std::string_view();
+    }
     return std::string_view(s.data(), s.size());
 }
-
-
-
 }  // namespace zuc

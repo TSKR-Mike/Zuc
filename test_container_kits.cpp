@@ -628,73 +628,98 @@ TEST_SUITE("Get Map Values Operations") {
 }
 
 /**
- * @test Merge Operations
+ * @test Concat Operations
  * Tests for merging two containers.
  */
-TEST_SUITE("Merge Operations") {
-    TEST_CASE("merge vectors") {
+TEST_SUITE("Concat Operations") {
+    TEST_CASE("get_concat vectors") {
         std::vector<int> vec1 = {1, 2, 3};
         std::vector<int> vec2 = {4, 5, 6};
-        auto merged = merge(vec1, vec2);
+        auto merged = get_concat(vec1, vec2);
         CHECK(merged.size() == 6);
         CHECK(merged == std::vector<int>{1, 2, 3, 4, 5, 6});
     }
 
-    TEST_CASE("merge lists") {
+    TEST_CASE("get_concat lists") {
         std::list<int> lst1 = {1, 2, 3};
         std::list<int> lst2 = {4, 5, 6};
-        auto merged = merge(lst1, lst2);
+        auto merged = get_concat(lst1, lst2);
         CHECK(merged.size() == 6);
     }
 
-    TEST_CASE("merge deques") {
+    TEST_CASE("get_concat deques") {
         std::deque<int> deq1 = {1, 2, 3};
         std::deque<int> deq2 = {4, 5, 6};
-        auto merged = merge(deq1, deq2);
+        auto merged = get_concat(deq1, deq2);
         CHECK(merged.size() == 6);
     }
 
-    TEST_CASE("merge with empty first") {
+    TEST_CASE("get_concat with empty first") {
         std::vector<int> empty_vec;
         std::vector<int> vec = {1, 2, 3};
-        auto merged = merge(empty_vec, vec);
+        auto merged = get_concat(empty_vec, vec);
         CHECK(merged.size() == 3);
         CHECK(merged == vec);
     }
 
-    TEST_CASE("merge with empty second") {
+    TEST_CASE("get_concat with empty second") {
         std::vector<int> vec = {1, 2, 3};
         std::vector<int> empty_vec;
-        auto merged = merge(vec, empty_vec);
+        auto merged = get_concat(vec, empty_vec);
         CHECK(merged.size() == 3);
         CHECK(merged == vec);
     }
 
-    TEST_CASE("merge both empty") {
+    TEST_CASE("get_concat both empty") {
         std::vector<int> empty1;
         std::vector<int> empty2;
-        auto merged = merge(empty1, empty2);
+        auto merged = get_concat(empty1, empty2);
         CHECK(merged.empty());
     }
 
-    TEST_CASE("merge with strings") {
+    TEST_CASE("get_concat with strings") {
         std::vector<std::string> vec1 = {"hello", "world"};
-        std::vector<std::string> vec2 = {"test", "merge"};
-        auto merged = merge(vec1, vec2);
+        std::vector<std::string> vec2 = {"test", "get_concat"};
+        auto merged = get_concat(vec1, vec2);
         CHECK(merged.size() == 4);
         CHECK(merged[0] == "hello");
         CHECK(merged[1] == "world");
         CHECK(merged[2] == "test");
-        CHECK(merged[3] == "merge");
+        CHECK(merged[3] == "get_concat");
     }
 
-    TEST_CASE("merge preserves originals") {
+    TEST_CASE("get_concat preserves originals") {
         std::vector<int> vec1 = {1, 2, 3};
         std::vector<int> vec2 = {4, 5, 6};
-        auto merged = merge(vec1, vec2);
+        auto merged = get_concat(vec1, vec2);
         CHECK(vec1 == std::vector<int>{1, 2, 3});
         CHECK(vec2 == std::vector<int>{4, 5, 6});
     }
+    TEST_CASE("get_concat with init list") {
+        // vec
+        std::vector<int> vec1 = {1, 2, 3};
+        auto merged = get_concat(vec1, {4, 5, 6});
+        CHECK(merged.size() == 6);
+        CHECK(merged == std::vector<int>{1, 2, 3, 4, 5, 6});
+        // list
+        std::list<int> lst1 = {1, 2, 3};
+        auto merged2 = get_concat(lst1, {4, 5, 6});
+        CHECK(merged2.size() == 6);
+        CHECK(merged2 == std::list<int>{1, 2, 3, 4, 5, 6});
+        // deq
+        std::deque<int> deq1 = {1, 2, 3};
+        auto merged3 = get_concat(deq1, {4, 5, 6});
+        CHECK(merged3.size() == 6);
+        CHECK(merged3 == std::deque<int>{1, 2, 3, 4, 5, 6});
+        // edge cases
+        std::vector<int> vec = {1, 2, 3};
+        auto merged4 = get_concat({}, vec);
+        CHECK(merged4.size() == 3);
+        CHECK(merged4 == vec);
+        auto merged5 = get_concat(vec, {});
+        CHECK(merged5.size() == 3);
+        CHECK(merged5 == vec);
+        }
 }
 
 /**
@@ -763,12 +788,12 @@ TEST_SUITE("Container Edge Cases") {
         CHECK(result == std::vector<int>{10, 20, 30, 40, 50});
     }
 
-    TEST_CASE("merge with different types") {
+    TEST_CASE("get_concat with different types") {
         std::vector<int> vec1 = {1, 2};
         std::vector<double> vec2 = {3.5, 4.5};
 
         // This should work with appropriate type conversion
-        auto merged = merge(vec1, vec1);  // Same type merge
+        auto merged = get_concat(vec1, vec1);  // Same type get_concat
         CHECK(merged.size() == 4);
     }
 }
@@ -849,10 +874,24 @@ TEST_SUITE("At Operations") {
         CHECK(vec[2] == 100);
     }
 
-    TEST_CASE("at_ref out of range throws") {
+    TEST_CASE("at_ref out of range - debug mode assert") {
+        // Note: at_ref now uses assert instead of throwing exceptions
+        // In debug mode, out of range access will trigger an assertion failure
+        // In release mode, behavior is undefined (like std::vector::operator[])
+        // This test documents the expected behavior but cannot be tested
+        // directly Users must ensure index is valid before calling at_ref
+
         std::vector<int> vec = {1, 2, 3};
-        CHECK_THROWS_AS(at_ref(vec, 5), std::out_of_range);
-        CHECK_THROWS_AS(at_ref(vec, 10), std::out_of_range);
+        // Valid access works fine
+        CHECK(at_ref(vec, 0) == 1);
+        CHECK(at_ref(vec, 2) == 3);
+
+        // Invalid access behavior:
+        // - Debug mode: assertion failure, program terminates
+        // - Release mode: undefined behavior
+        // The following lines are commented out to avoid triggering assert in
+        // tests CHECK_THROWS_AS(at_ref(vec, 5), std::out_of_range);
+        // CHECK_THROWS_AS(at_ref(vec, 10), std::out_of_range);
     }
 
     TEST_CASE("at_ref with const container") {

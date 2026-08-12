@@ -1,5 +1,6 @@
 # zuc (Zero-overhead Utility Collection) - Documentation
-
+## ⚠️Notice:
+For functions equipped with range check(using `assert`), building under `release` mode will disable the check and cause **undefined behavior**.
 ## Table of Contents
 - [Overview](#overview)
 - [Installation](#installation)
@@ -130,16 +131,24 @@ bool has_all = contains_all(text, {"Hello", "World"});  // true
 #### Replace and Remove Operations
 
 ```cpp
-// In-place replacement
+// In-place replacement (non-overlapping)
 std::string text = "Hello, World!";
 replace_all(text, "World", "C++");  // "Hello, C++!"
+
+// Non-overlapping replacement example
+std::string test = "aaa";
+replace_all(test, "aa", "b");  // "ba" (not "bb")
 
 // Copy-based replacement
 auto replaced = get_all_replaced(text, "World", "C++");
 
-// Remove substrings
+// Remove substrings (non-overlapping)
 std::string data = "Hello, World! World!";
 remove_all(data, "World");  // "Hello, ! !"
+
+// Non-overlapping removal example
+std::string test2 = "aaaa";
+remove_all(test2, "aa");  // "aa" (not empty)
 
 // Remove multiple substrings
 std::string messy = "<b>Hello</b><i>World</i>";
@@ -563,7 +572,7 @@ std::vector<int> numbers = {1, 2, 3, 4, 5, 6};
 erase_if(numbers, [](int x) { return x % 2 == 0; });  // {1, 3, 5}
 
 std::vector<int> more = {7, 8, 9};
-auto merged = merge(numbers, more);  // {1, 3, 5, 7, 8, 9}
+auto merged = get_concat(numbers, more);  // {1, 3, 5, 7, 8, 9}
 ```
 
 #### Container Transformation
@@ -926,119 +935,119 @@ bool is_num3 = is_numeric("hello");  // false
 
 ### String Functions
 
-| Function | Description | Returns |
-|----------|-------------|---------|
-| `string_slice(s, pos, count)` | Get substring view | `std::string_view` |
-| `prefix(s, n)` | Get first n characters | `std::string_view` |
-| `suffix(s, n)` | Get last n characters | `std::string_view` |
-| `remove_prefix(s, n)` | Remove first n characters | `std::string_view` |
-| `remove_suffix(s, n)` | Remove last n characters | `std::string_view` |
-| `trim(s)` | In-place trim whitespace | `std::string&` |
-| `trim_view(s)` | View-based trim | `std::string_view` |
-| `split(s, delim)` | Split by delimiter | `vector<string_view>` |
-| `join(strings, delim)` | Join strings with delimiter | `std::string` |
-| `contains(s, substr)` | Check if contains substring | `bool` |
-| `replace_all(s, old, new)` | Replace all occurrences | `void` |
-| `remove_all(s, substr)` | Remove all occurrences | `std::string&` |
+| Function                      | Description                                 | Returns               |
+| ----------------------------- | ------------------------------------------- | --------------------- |
+| `string_slice(s, pos, count)` | Get substring view                          | `std::string_view`    |
+| `prefix(s, n)`                | Get first n characters                      | `std::string_view`    |
+| `suffix(s, n)`                | Get last n characters                       | `std::string_view`    |
+| `remove_prefix(s, n)`         | Remove first n characters                   | `std::string_view`    |
+| `remove_suffix(s, n)`         | Remove last n characters                    | `std::string_view`    |
+| `trim(s)`                     | In-place trim whitespace                    | `std::string&`        |
+| `trim_view(s)`                | View-based trim                             | `std::string_view`    |
+| `split(s, delim)`             | Split by delimiter                          | `vector<string_view>` |
+| `join(strings, delim)`        | Join strings with delimiter                 | `std::string`         |
+| `contains(s, substr)`         | Check if contains substring                 | `bool`                |
+| `replace_all(s, old, new)`    | Replace all **non-overlapping** occurrences | `void`                |
+| `remove_all(s, substr)`       | Remove all **non-overlapping** occurrences  | `std::string&`        |
 
 ### Span Functions
 
-| Function | Description | Returns |
-|----------|-------------|---------|
-| `sub_span_safe(s, offset, count)` | Bounds-checked subspan | `optional<span>` |
-| `convert_span_to_vector(s)` | Convert span to vector | `vector<T>` |
-| `contains(s, value)` | Check if contains value | `bool` |
-| `find_subspan(s, target)` | Find subspan within span | `span<T>` |
+| Function                          | Description              | Returns          |
+| --------------------------------- | ------------------------ | ---------------- |
+| `sub_span_safe(s, offset, count)` | Bounds-checked subspan   | `optional<span>` |
+| `convert_span_to_vector(s)`       | Convert span to vector   | `vector<T>`      |
+| `contains(s, value)`              | Check if contains value  | `bool`           |
+| `find_subspan(s, target)`         | Find subspan within span | `span<T>`        |
 
 ### I/O Classes and Functions
 
-| Class/Function | Description |
-|----------------|-------------|
-| `FileMgr` | RAII file management class |
-| `FileMgr::write_a_string(content)` | Write content without newline |
-| `FileMgr::write_a_string(fmt, ...)` | Write formatted content without newline |
-| `FileMgr::write_a_line(content)` | Write content with automatic newline |
-| `FileMgr::write_a_line(fmt, ...)` | Write formatted content with automatic newline |
-| `FileMgr::write_all(span)` | Write multiple items, one per line |
-| `write_string_to_console(fmt, ...)` | Formatted console output |
-| `write_a_line_to_console(fmt, ...)` | Formatted console output with newline |
-| `read_a_line_from_console(fmt, ...)` | Interactive console input |
-| `open_file(path)` | Safe file opening |
+| Class/Function                       | Description                                    |
+| ------------------------------------ | ---------------------------------------------- |
+| `FileMgr`                            | RAII file management class                     |
+| `FileMgr::write_a_string(content)`   | Write content without newline                  |
+| `FileMgr::write_a_string(fmt, ...)`  | Write formatted content without newline        |
+| `FileMgr::write_a_line(content)`     | Write content with automatic newline           |
+| `FileMgr::write_a_line(fmt, ...)`    | Write formatted content with automatic newline |
+| `FileMgr::write_all(span)`           | Write multiple items, one per line             |
+| `write_string_to_console(fmt, ...)`  | Formatted console output                       |
+| `write_a_line_to_console(fmt, ...)`  | Formatted console output with newline          |
+| `read_a_line_from_console(fmt, ...)` | Interactive console input                      |
+| `open_file(path)`                    | Safe file opening                              |
 
 ### Time Classes and Functions (`time_kits.hpp`)
 
-| Class/Function | Description |
-|----------------|-------------|
-| `Timer` | Simple timing utility |
-| `Stopwatch` | Pause/resume timing |
-| `DateTime` | Date/time manipulation |
-| `time_a_function(name, settings, f, ...)` | Function benchmarking |
-| `sleep(seconds)` | Convenient sleep function |
+| Class/Function                            | Description               |
+| ----------------------------------------- | ------------------------- |
+| `Timer`                                   | Simple timing utility     |
+| `Stopwatch`                               | Pause/resume timing       |
+| `DateTime`                                | Date/time manipulation    |
+| `time_a_function(name, settings, f, ...)` | Function benchmarking     |
+| `sleep(seconds)`                          | Convenient sleep function |
 
 ### Random Functions (`random_kits.hpp`)
 
-| Function | Description | Returns |
-|----------|-------------|---------|
-| `random_int(min, max)` | Random integer in range [min, max] | `int` |
-| `random_double(min, max)` | Random double in range [min, max) | `double` |
-| `random_long_long(min, max)` | Random long long in range | `long long` |
-| `random_int32(min, max)` | Random 32-bit integer | `int32_t` |
-| `random_int64(min, max)` | Random 64-bit integer | `int64_t` |
-| `random_true(probability)` | Boolean with probability of being true | `bool` |
-| `random_false(probability)` | Boolean with probability of being false | `bool` |
-| `uniform_random_int(min, max)` | Uniform random integer | `int` |
-| `uniform_random_double(min, max)` | Uniform random double | `double` |
-| `shuffle(container)` | Shuffle container in place | `void` |
-| `shuffle(container, engine)` | Shuffle with custom engine | `void` |
-| `shuffled(container)` | Return shuffled copy | `Container` |
+| Function                          | Description                             | Returns     |
+| --------------------------------- | --------------------------------------- | ----------- |
+| `random_int(min, max)`            | Random integer in range [min, max]      | `int`       |
+| `random_double(min, max)`         | Random double in range [min, max)       | `double`    |
+| `random_long_long(min, max)`      | Random long long in range               | `long long` |
+| `random_int32(min, max)`          | Random 32-bit integer                   | `int32_t`   |
+| `random_int64(min, max)`          | Random 64-bit integer                   | `int64_t`   |
+| `random_true(probability)`        | Boolean with probability of being true  | `bool`      |
+| `random_false(probability)`       | Boolean with probability of being false | `bool`      |
+| `uniform_random_int(min, max)`    | Uniform random integer                  | `int`       |
+| `uniform_random_double(min, max)` | Uniform random double                   | `double`    |
+| `shuffle(container)`              | Shuffle container in place              | `void`      |
+| `shuffle(container, engine)`      | Shuffle with custom engine              | `void`      |
+| `shuffled(container)`             | Return shuffled copy                    | `Container` |
 
 ### Container Functions (`container_kits.hpp`)
 
-| Function | Description | Returns |
-|----------|-------------|---------|
-| `contains(container, value)` | Check if contains element | `bool` |
-| `contains_any(container, values)` | Check if contains any of values | `bool` |
-| `contains_if(container, pred)` | Check if contains element matching predicate | `bool` |
-| `pop_back_value(vector)` | Remove and return last element | `Optional<T>` |
-| `pop_front_value(list)` | Remove and return first element | `Optional<T>` |
-| `get_or_insert(map, key, value)` | Get or insert value | `T&` |
-| `get_or_insert_default(map, key, default)` | Get or insert with default | `T&` |
-| `get_map_keys(map)` | Extract keys from map | `unordered_set<Key>` |
-| `get_map_values(map)` | Extract values from map | `unordered_set<Value>` |
-| `slice(c, start, end, step)` | Slice container with step | `vector<T>` |
-| `erase_if(container, pred)` | Remove elements matching predicate | `void` |
-| `merge(a, b)` | Merge two containers | `vector<T>` |
-| `transform_all_to_vector<T>(c, f)` | Transform elements | `vector<T>` |
+| Function                                   | Description                                  | Returns                |
+| ------------------------------------------ | -------------------------------------------- | ---------------------- |
+| `contains(container, value)`               | Check if contains element                    | `bool`                 |
+| `contains_any(container, values)`          | Check if contains any of values              | `bool`                 |
+| `contains_if(container, pred)`             | Check if contains element matching predicate | `bool`                 |
+| `pop_back_value(vector)`                   | Remove and return last element               | `Optional<T>`          |
+| `pop_front_value(list)`                    | Remove and return first element              | `Optional<T>`          |
+| `get_or_insert(map, key, value)`           | Get or insert value                          | `T&`                   |
+| `get_or_insert_default(map, key, default)` | Get or insert with default                   | `T&`                   |
+| `get_map_keys(map)`                        | Extract keys from map                        | `unordered_set<Key>`   |
+| `get_map_values(map)`                      | Extract values from map                      | `unordered_set<Value>` |
+| `slice(c, start, end, step)`               | Slice container with step                    | `vector<T>`            |
+| `erase_if(container, pred)`                | Remove elements matching predicate           | `void`                 |
+| `get_concat(a, b)`                         | Concat two containers                        | `vector<T>`            |
+| `transform_all_to_vector<T>(c, f)`         | Transform elements                           | `vector<T>`            |
 
 ### Numerics Functions and Types (`numerics_kits.hpp`)
 
-| Function/Type | Description | Returns |
-|---------------|-------------|---------|
-| `checked_add<T>(a, b)` | Overflow-checked addition | `Optional<T>` |
-| `checked_sub<T>(a, b)` | Overflow-checked subtraction | `Optional<T>` |
-| `checked_mul<T>(a, b)` | Overflow-checked multiplication | `Optional<T>` |
-| `select_by_max_unsigned_t<MAX>` | Smallest unsigned type for max value | Type alias |
-| `select_by_range_t<MIN, MAX>` | Smallest type for range | Type alias |
-| `select_by_value_t<VALUE>` | Smallest type for value | Type alias |
+| Function/Type                   | Description                          | Returns       |
+| ------------------------------- | ------------------------------------ | ------------- |
+| `checked_add<T>(a, b)`          | Overflow-checked addition            | `Optional<T>` |
+| `checked_sub<T>(a, b)`          | Overflow-checked subtraction         | `Optional<T>` |
+| `checked_mul<T>(a, b)`          | Overflow-checked multiplication      | `Optional<T>` |
+| `select_by_max_unsigned_t<MAX>` | Smallest unsigned type for max value | Type alias    |
+| `select_by_range_t<MIN, MAX>`   | Smallest type for range              | Type alias    |
+| `select_by_value_t<VALUE>`      | Smallest type for value              | Type alias    |
 
 ### RAII Classes and Functions (`raii_kits.hpp`)
 
-| Class/Function | Description | Returns |
-|----------------|-------------|---------|
-| `generate_scope_guard(func)` | Create cleanup action on scope exit | `ScopeGuard` |
-| `generate_scope_guard_success(func)` | Cleanup only if no exception | `ScopeGuard` |
-| `generate_scope_guard_failed(func)` | Cleanup only if exception | `ScopeGuard` |
-| `ScopeGuard::dismiss()` | Prevent cleanup from running | `void` |
+| Class/Function                       | Description                         | Returns      |
+| ------------------------------------ | ----------------------------------- | ------------ |
+| `generate_scope_guard(func)`         | Create cleanup action on scope exit | `ScopeGuard` |
+| `generate_scope_guard_success(func)` | Cleanup only if no exception        | `ScopeGuard` |
+| `generate_scope_guard_failed(func)`  | Cleanup only if exception           | `ScopeGuard` |
+| `ScopeGuard::dismiss()`              | Prevent cleanup from running        | `void`       |
 
 ### String Conversion Functions (`string_converts.hpp`)
 
-| Function | Description | Returns |
-|----------|-------------|---------|
-| `convert_range_to_string(range)` | Convert container to string | `std::string` |
-| `convert_to_bytes(value)` | Convert object to byte span | `span<const std::byte>` |
-| `convert_to_hex(data)` | Convert to hexadecimal string | `std::string` |
-| `try_convert_string_to_numerics<T>(str)` | Safe string to number conversion | `Optional<T>` |
-| `is_numeric(str)` | Check if string is numeric | `bool` |
+| Function                                 | Description                      | Returns                 |
+| ---------------------------------------- | -------------------------------- | ----------------------- |
+| `convert_range_to_string(range)`         | Convert container to string      | `std::string`           |
+| `convert_to_bytes(value)`                | Convert object to byte span      | `span<const std::byte>` |
+| `convert_to_hex(data)`                   | Convert to hexadecimal string    | `std::string`           |
+| `try_convert_string_to_numerics<T>(str)` | Safe string to number conversion | `Optional<T>`           |
+| `is_numeric(str)`                        | Check if string is numeric       | `bool`                  |
 
 ## Examples
 

@@ -49,12 +49,22 @@ namespace zuc {
  * bool not_found = contains(vec, 6); // false
  */
 template <typename Range, typename U>
-    requires std::equality_comparable_with<get_rangelike_value_type<Range>, U> &&
+    requires std::equality_comparable_with<get_rangelike_value_type<Range>,
+                                           U> &&
              RangeLike<Range>
 constexpr bool contains(const Range& obj, const U& contain_obj) {
     if (std::empty(obj)) return false;
     return std::find(std::begin(obj), std::end(obj), contain_obj) !=
            std::end(obj);
+}
+
+template <typename Range, typename U>
+    requires std::equality_comparable_with<get_rangelike_value_type<Range>,
+                                           U> &&
+             RangeLike<Range>
+constexpr bool contains(const Range& obj,
+                        const std::initializer_list<U>& contain_obj) {
+    return contains(obj, std::span<const U>(contain_obj));
 }
 
 /**
@@ -83,6 +93,15 @@ constexpr bool contains_any(const Range1& obj, const Range2& contain_objs) {
         if (contains(obj, x)) return true;
     }
     return false;
+}
+
+template <typename Range, typename U>
+    requires std::equality_comparable_with<get_rangelike_value_type<Range>,
+                                           U> &&
+             RangeLike<Range>
+constexpr bool contains_any(const Range& obj,
+                            const std::initializer_list<U>& contain_obj) {
+    return contains_any(obj, std::span<const U>(contain_obj));
 }
 
 /**
@@ -279,13 +298,16 @@ std::unordered_set<ValueType> get_map_values(const MapType& m) {
 
 template <typename Range, typename ElemType = get_rangelike_value_type<Range>>
     requires RangeLike<Range> && Insertable<Range, ElemType>
-std::decay_t<Range> merge(const Range& r1, const Range& r2) {
+std::decay_t<Range> get_concat(const Range& r1, const Range& r2) {
     std::decay_t<Range> result;
-    
-    if constexpr (requires { result.reserve(get_rangelike_size(r1) + get_rangelike_size(r2)); }) {
+
+    if constexpr (requires {
+                      result.reserve(get_rangelike_size(r1) +
+                                     get_rangelike_size(r2));
+                  }) {
         result.reserve(get_rangelike_size(r1) + get_rangelike_size(r2));
     }
-    
+
     for (const auto& it : r1) {
         result.insert(std::end(result), it);
     }
@@ -294,6 +316,21 @@ std::decay_t<Range> merge(const Range& r1, const Range& r2) {
     }
     return result;
 }
+
+template <typename Range, typename ElemType = get_rangelike_value_type<Range>>
+    requires RangeLike<Range> && Insertable<Range, ElemType>
+std::decay_t<Range> get_concat(const Range& r1,
+                               const std::initializer_list<ElemType>& r2) {
+    std::decay_t<Range> result;
+    for (const auto& it : r1) {
+        result.insert(std::end(result), it);
+    }
+    for (const auto& it : r2) {
+        result.insert(std::end(result), it);
+    }
+    return result;
+}
+
 template <typename Range, typename ElemType = get_rangelike_value_type<Range>>
     requires RangeLike<Range>
 std::optional<ElemType> at(Range& r, size_t index) {
@@ -328,9 +365,7 @@ template <typename Range, typename ElemType = get_rangelike_value_type<Range>>
     requires RangeLike<Range>
 ElemType& at_ref(Range& r, size_t index) {
     size_t s = get_rangelike_size(r);
-    if (index >= s) {
-        throw std::out_of_range("at_ref: index out of range");
-    }
+    assert(index < s && "at_ref: index out of range");
     auto it = std::begin(r);
     std::advance(it, index);
     return *it;
@@ -340,9 +375,7 @@ template <typename Range, typename ElemType = get_rangelike_value_type<Range>>
     requires RangeLike<Range>
 const ElemType& at_ref(const Range& r, size_t index) {
     size_t s = get_rangelike_size(r);
-    if (index >= s) {
-        throw std::out_of_range("at_ref: index out of range");
-    }
+    assert(index < s && "at_ref: index out of range");
     auto it = std::begin(r);
     std::advance(it, index);
     return *it;
@@ -359,6 +392,7 @@ std::optional<ElemType> choice(Range& r) {
         return at(r, index);
     }
 }
+
 template <typename Range, typename ElemType = get_rangelike_value_type<Range>>
     requires RangeLike<Range>
 std::optional<ElemType> choice(const Range& r) {

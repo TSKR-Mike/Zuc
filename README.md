@@ -111,7 +111,7 @@ Tested on: GCC, Clang, MSVC (CI passes).
 - **Map Operations** - `get_or_insert()`, `get_or_insert_default()`, `get_map_keys()`, `get_map_values()`
 - **Container Slicing** - `slice()` with step support for sub-container extraction
 - **Safe Access** - `at()`, `at_ref()` for safe element access with bounds checking
-- **Container Modification** - `erase_if()`, `merge()` for safe container manipulation
+- **Container Modification** - `erase_if()`, `get_concat()` for safe container manipulation
 - **Container Transformation** - `transform_all_to_vector()` for element mapping
 
 ### Span Utilities (`span_kits.hpp`)
@@ -289,10 +289,10 @@ auto every_third = slice(data, 0, 9, 3);   // {1, 4, 7}
 std::vector<int> numbers = {1, 2, 3, 4, 5, 6};
 erase_if(numbers, [](int x) { return x % 2 == 0; });  // {1, 3, 5}
 
-// Merge containers
+// Concat containers
 std::vector<int> first = {1, 2, 3};
 std::vector<int> second = {4, 5, 6};
-auto merged = merge(first, second);  // {1, 2, 3, 4, 5, 6}
+auto merged = get_concat(first, second);  // {1, 2, 3, 4, 5, 6}
 
 // Transform container elements
 std::vector<int> numbers = {1, 2, 3, 4, 5};
@@ -499,9 +499,9 @@ try {
     // Write content with automatic newline
     file.write_a_line("Total lines: {}", lines.size());
     
-    // Write multiple items, one per line
+    // Write multiple items, one per line - no std::span needed!
     std::vector<std::string> items = {"item1", "item2", "item3"};
-    file.write_all(std::span(items));
+    file.write_all(items);
     
 } catch (const FileException& e) {
     write_a_line_to_console("Error: {}", e.what());
@@ -512,23 +512,23 @@ auto name = read_a_line_from_console("Enter your name: ");
 write_a_line_to_console("Hello, {}!", name);
 
 // Write formatted content easily
-file.write("Processing complete at: {}\n", get_today_time_detailed_str());
+file.write_a_string("Processing complete at: {}\n", get_today_time_detailed_str());
 ```
 
 ### Why zuc - The Ultimate Convenience Library?
 
-| Feature | Traditional C++ | zuc |
-|---------|----------------|--------|
-| String slicing | Creates new strings | Zero-allocation views |
-| Container operations | Manual loops and checks | Simple, safe functions |
-| Span operations | Manual bounds checking | Safe, bounds-checked operations |
-| File handling | Manual resource management | RAII with automatic cleanup |
-| Error handling | Return codes | Exception-based |
-| Console I/O | printf/scanf (type-unsafe) | Type-safe formatting |
-| Time operations | Verbose chrono code | Simple, intuitive API |
-| Date manipulation | Complex calculations | Easy arithmetic operations |
-| Function benchmarking | Manual timing code | One-function solution |
-| vs stdio | Manual cleanup, error-prone | Convenient, exception-safe |
+| Feature               | Traditional C++             | zuc                             |
+| --------------------- | --------------------------- | ------------------------------- |
+| String slicing        | Creates new strings         | Zero-allocation views           |
+| Container operations  | Manual loops and checks     | Simple, safe functions          |
+| Span operations       | Manual bounds checking      | Safe, bounds-checked operations |
+| File handling         | Manual resource management  | RAII with automatic cleanup     |
+| Error handling        | Return codes                | Exception-based                 |
+| Console I/O           | printf/scanf (type-unsafe)  | Type-safe formatting            |
+| Time operations       | Verbose chrono code         | Simple, intuitive API           |
+| Date manipulation     | Complex calculations        | Easy arithmetic operations      |
+| Function benchmarking | Manual timing code          | One-function solution           |
+| vs stdio              | Manual cleanup, error-prone | Convenient, exception-safe      |
 
 ## 📋 Requirements
 
@@ -658,7 +658,7 @@ Tested and verified on:
 - `at()` - Safe element access returning optional
 - `at_ref()` - Safe element access returning reference (throws on error)
 - `erase_if()` - Remove elements matching predicate
-- `merge()` - Merge two containers
+- `get_concat()` - Concat two containers
 - `transform_all_to_vector()` - Transform container elements to vector
 
 ### Numerics Operations (`numerics_kits.hpp`)

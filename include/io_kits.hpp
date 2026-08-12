@@ -81,7 +81,7 @@ enum class ReadLineStatus { EndOfFile, Failed, Success };
  *     file.write("Hello, World!\n");
  *     file.write("Number: {}\n", 42);
  * } catch (const FileException& e) {
- *     std::cerr << "Error: " << e.what() << std::endl;
+ *     std::cerr << "Error: " << e.what() << "\n";
  * }
  */
 class FileMgr {
@@ -355,24 +355,27 @@ class FileMgr {
         }
         std::string content_str = convert_stringable_to_string(content);
         file_ << content_str;
-        file_ << std::endl;
+        file_ << "\n";
     }
 
     /**
      * @brief Write multiple items to file, one per line
-     * @param all_content Span of stringable items to write
+     * @param all_content Range of stringable items to write
      * @note Each item is written on its own line followed by a newline character
      * @note If file is not valid, this function silently returns without throwing an exception
      * @example
      * std::vector<std::string> lines = {"Line 1", "Line 2", "Line 3"};
-     * file.write_all(std::span(lines));  // Writes each string on a separate line
+     * file.write_all(lines);  // Writes each string on a separate line
+     * 
+     * std::array<const char*, 3> arr = {"Line 1", "Line 2", "Line 3"};
+     * file.write_all(arr);  // Also works with arrays
      */
-    template <Stringable T>
-    void write_all(std::span<T> all_content) {
+    template <RangeLike R>
+    void write_all(const R& all_content) {
         if (!is_valid()) {
             return;
         }
-        for (auto x : all_content) {
+        for (const auto& x : all_content) {
             write_a_line(x);
         }
     }
@@ -443,6 +446,20 @@ class FileMgr {
         return file_;
     }
 
+    /**
+     * @brief Flush the file stream to ensure all data is written
+     * @note Forces all buffered data to be written to the underlying file
+     * @note Useful when you need to ensure data is persisted immediately
+     * @example
+     * file.write_a_line("Important data");
+     * file.flush();  // Ensure data is written to disk
+     */
+    void flush() {
+        if (is_valid()) {
+            file_.flush();
+        }
+    }
+
     
 };
 
@@ -463,7 +480,6 @@ inline void write_string_to_console(std::format_string<Args...> fmt,
         std::string formatted_content =
             std::format(fmt, std::forward<Args>(args)...);
         std::cout << formatted_content;
-        std::cout << std::flush;
     } catch (const std::format_error& e) {
         throw WriteLineException(std::format("Format error: {}", e.what()));
     }

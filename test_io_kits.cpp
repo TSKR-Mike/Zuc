@@ -134,7 +134,7 @@ TEST_SUITE("File Operations") {
 
         {
             FileMgr file(test_file, std::ios::out);
-            file.write_all(std::span(lines));
+            file.write_all(lines);
         }
 
         {
@@ -556,10 +556,402 @@ TEST_SUITE("File Edge Cases") {
             CHECK(content[0] == "Line 1");
             CHECK(content[1] == "Line 2");
             CHECK(content[2] == "Line 3");
-            // Verify no '\r' characters remain
             for (const auto& line : content) {
                 CHECK(line.find('\r') == std::string::npos);
             }
+        }
+
+        std::filesystem::remove(test_file);
+    }
+}
+
+/**
+ * @test Exception Classes
+ * Tests for custom exception classes.
+ */
+TEST_SUITE("Exception Classes") {
+    TEST_CASE("Exception classes construction and inheritance") {
+        FileException file_ex("File error");
+        ReadLineException read_ex("Read error");
+        WriteLineException write_ex("Write error");
+
+        CHECK(std::string(file_ex.what()) == "File error");
+        CHECK(std::string(read_ex.what()) == "Read error");
+        CHECK(std::string(write_ex.what()) == "Write error");
+
+        CHECK(std::is_base_of_v<std::runtime_error, FileException>);
+        CHECK(std::is_base_of_v<std::runtime_error, ReadLineException>);
+        CHECK(std::is_base_of_v<std::runtime_error, WriteLineException>);
+    }
+}
+
+/**
+ * @test FileMgr Additional Methods
+ * Tests for FileMgr methods not covered in previous test suites.
+ */
+TEST_SUITE("FileMgr Additional Methods") {
+    TEST_CASE("FileMgr reset_write_pointer_to_last") {
+        const std::string test_file = "test_reset_last.txt";
+
+        {
+            FileMgr file(test_file, std::ios::out);
+            file.write_a_line("Initial content");
+            file.reset_write_pointer_to_last();
+            file.write_a_line("Appended content");
+        }
+
+        {
+            FileMgr file(test_file, std::ios::in);
+            auto content = file.read_all();
+            CHECK(content.size() == 2);
+            CHECK(content[0] == "Initial content");
+            CHECK(content[1] == "Appended content");
+        }
+
+        std::filesystem::remove(test_file);
+    }
+
+    TEST_CASE("FileMgr get_stream") {
+        const std::string test_file = "test_get_stream.txt";
+
+        {
+            FileMgr file(test_file, std::ios::out);
+            auto& stream = file.get_stream();
+            stream << "Content via stream";
+        }
+
+        {
+            FileMgr file(test_file, std::ios::in);
+            auto& stream = file.get_stream();
+            std::string content;
+            std::getline(stream, content);
+            CHECK(content == "Content via stream");
+        }
+
+        std::filesystem::remove(test_file);
+    }
+
+    TEST_CASE("FileMgr flush") {
+        const std::string test_file = "test_flush.txt";
+
+        {
+            FileMgr file(test_file, std::ios::out);
+            file.write_a_line("Line 1");
+            file.flush();
+            file.write_a_line("Line 2");
+            file.flush();
+        }
+
+        {
+            FileMgr file(test_file, std::ios::in);
+            auto content = file.read_all();
+            CHECK(content.size() == 2);
+            CHECK(content[0] == "Line 1");
+            CHECK(content[1] == "Line 2");
+        }
+
+        std::filesystem::remove(test_file);
+    }
+
+    TEST_CASE("FileMgr write_a_string without newline") {
+        const std::string test_file = "test_write_string_no_newline.txt";
+
+        {
+            FileMgr file(test_file, std::ios::out);
+            file.write_a_string("Hello");
+            file.write_a_string(" ");
+            file.write_a_string("World");
+        }
+
+        {
+            FileMgr file(test_file, std::ios::in);
+            auto content = file.read_all();
+            CHECK(content.size() == 1);
+            CHECK(content[0] == "Hello World");
+        }
+
+        std::filesystem::remove(test_file);
+    }
+
+    TEST_CASE("FileMgr multiple close calls") {
+        const std::string test_file = "test_multiple_close.txt";
+
+        {
+            FileMgr file(test_file, std::ios::out);
+            file.write_a_line("Test content");
+            file.close();
+            CHECK_NOTHROW(file.close());
+            CHECK_NOTHROW(file.close());
+        }
+
+        std::filesystem::remove(test_file);
+    }
+}
+
+/**
+ * @test Error Handling
+ * Tests for error handling and exception scenarios.
+ */
+TEST_SUITE("Error Handling") {
+    TEST_CASE("FileMgr operations after close throw exceptions") {
+        const std::string test_file = "test_after_close.txt";
+
+        {
+            FileMgr file(test_file, std::ios::out);
+            file.write_a_line("Initial content");
+            file.close();
+            CHECK(file.is_valid() == false);
+            CHECK_THROWS_AS(file.write_a_line("Should fail"), FileException);
+            CHECK_THROWS_AS(file.read_all(), FileException);
+        }
+
+        std::filesystem::remove(test_file);
+    }
+
+    TEST_CASE("FileMgr read_a_line from invalid file returns failed status") {
+        FileMgr file("test_invalid_read.txt", std::ios::out);
+        file.close();
+        auto [status, line] = file.read_a_line();
+        CHECK(status == ReadLineStatus::Failed);
+        CHECK(!line.has_value());
+    }
+
+}
+
+/**
+ * @test Boundary Cases
+ * Tests for boundary conditions and edge cases.
+ */
+TEST_SUITE("Boundary Cases") {
+    TEST_CASE("FileMgr empty lines") {
+        const std::string test_file = "test_empty_lines.txt";
+
+        {
+            FileMgr file(test_file, std::ios::out);
+            file.write_a_line("");
+            file.write_a_line("Line 1");
+            file.write_a_line("");
+        }
+
+        {
+            FileMgr file(test_file, std::ios::in);
+            auto content = file.read_all();
+            CHECK(content.size() == 3);
+            CHECK(content[0] == "");
+            CHECK(content[1] == "Line 1");
+            CHECK(content[2] == "");
+        }
+
+        std::filesystem::remove(test_file);
+    }
+
+    TEST_CASE("FileMgr special characters") {
+        const std::string test_file = "test_special_chars.txt";
+
+        {
+            FileMgr file(test_file, std::ios::out);
+            file.write_a_line("Line with \t tab");
+            file.write_a_line("Line with \"quotes\"");
+            file.write_a_line("Line with @#$%^&*() symbols");
+        }
+
+        {
+            FileMgr file(test_file, std::ios::in);
+            auto content = file.read_all();
+            CHECK(content.size() == 3);
+            CHECK(content[0] == "Line with \t tab");
+            CHECK(content[1] == "Line with \"quotes\"");
+            CHECK(content[2] == "Line with @#$%^&*() symbols");
+        }
+
+        std::filesystem::remove(test_file);
+    }
+
+    TEST_CASE("FileMgr long line") {
+        const std::string test_file = "test_long_line.txt";
+        std::string long_line(10000, 'A');
+
+        {
+            FileMgr file(test_file, std::ios::out);
+            file.write_a_line(long_line);
+        }
+
+        {
+            FileMgr file(test_file, std::ios::in);
+            auto content = file.read_all();
+            CHECK(content.size() == 1);
+            CHECK(content[0].length() == 10000);
+            CHECK(content[0] == long_line);
+        }
+
+        std::filesystem::remove(test_file);
+    }
+
+    TEST_CASE("FileMgr write_all with empty range") {
+        const std::string test_file = "test_empty_range.txt";
+        std::vector<std::string> empty_vector;
+
+        {
+            FileMgr file(test_file, std::ios::out);
+            file.write_all(empty_vector);
+        }
+
+        {
+            FileMgr file(test_file, std::ios::in);
+            auto content = file.read_all();
+            CHECK(content.empty());
+        }
+
+        std::filesystem::remove(test_file);
+    }
+
+    TEST_CASE("FileMgr read_a_line with only newline") {
+        const std::string test_file = "test_only_newline.txt";
+
+        {
+            FileMgr file(test_file, std::ios::out);
+            file.write_a_string("\n");
+        }
+
+        {
+            FileMgr file(test_file, std::ios::in);
+            auto [status, line] = file.read_a_line();
+            CHECK(status == ReadLineStatus::Success);
+            CHECK(line.has_value());
+            CHECK(line.value().empty());
+        }
+
+        std::filesystem::remove(test_file);
+    }
+}
+
+/**
+ * @test Console Operations Extended
+ * Extended tests for console I/O operations.
+ */
+TEST_SUITE("Console Operations Extended") {
+    TEST_CASE("Console write with empty string and special characters") {
+        CHECK_NOTHROW(write_string_to_console(""));
+        CHECK_NOTHROW(write_a_line_to_console(""));
+        CHECK_NOTHROW(write_string_to_console("Special: \t\n\r\"\\"));
+        CHECK_NOTHROW(write_a_line_to_console("Line with \"quotes\""));
+    }
+
+    TEST_CASE("Console write with various types") {
+        CHECK_NOTHROW(write_string_to_console("Int: {}, Float: {}, Bool: {}, Char: {}", 
+                                              42, 3.14f, true, 'A'));
+        CHECK_NOTHROW(write_a_line_to_console("Mixed: {}, {}, {}, {}", 
+                                              42, 3.14, true, "hello"));
+    }
+}
+
+/**
+ * @test FileMgr Pointer Operations Extended
+ * Extended tests for pointer operations.
+ */
+TEST_SUITE("FileMgr Pointer Operations Extended") {
+    TEST_CASE("FileMgr reset operations on empty file") {
+        const std::string test_file = "test_reset_empty.txt";
+
+        {
+            FileMgr file(test_file, std::ios::out);
+            CHECK_NOTHROW(file.reset_read_pointer_to_front());
+            CHECK_NOTHROW(file.reset_write_pointer_to_front());
+            CHECK_NOTHROW(file.reset_write_pointer_to_last());
+        }
+
+        {
+            FileMgr file(test_file, std::ios::in);
+            CHECK_NOTHROW(file.reset_read_pointer_to_front());
+            auto content = file.read_all();
+            CHECK(content.empty());
+        }
+
+        std::filesystem::remove(test_file);
+    }
+
+    TEST_CASE("FileMgr reset operations on invalid file") {
+        FileMgr file("test_reset_invalid.txt", std::ios::out);
+        file.close();
+        CHECK_NOTHROW(file.reset_read_pointer_to_front());
+        CHECK_NOTHROW(file.reset_write_pointer_to_front());
+        CHECK_NOTHROW(file.reset_write_pointer_to_last());
+        std::filesystem::remove("test_reset_invalid.txt");
+    }
+
+    TEST_CASE("FileMgr reset_read_pointer_to_front multiple times") {
+        const std::string test_file = "test_reset_multiple.txt";
+
+        {
+            FileMgr file(test_file, std::ios::out);
+            file.write_a_line("Line 1");
+            file.write_a_line("Line 2");
+        }
+
+        {
+            FileMgr file(test_file, std::ios::in);
+            auto [status1, line1] = file.read_a_line();
+            CHECK(line1 == "Line 1");
+
+            file.reset_read_pointer_to_front();
+            auto [status2, line2] = file.read_a_line();
+            CHECK(line2 == "Line 1");
+        }
+
+        std::filesystem::remove(test_file);
+    }
+}
+
+/**
+ * @test FileMgr WriteAll Extended
+ * Extended tests for write_all method.
+ */
+TEST_SUITE("FileMgr WriteAll Extended") {
+    TEST_CASE("FileMgr write_all with different container types") {
+        const std::string test_file = "test_containers.txt";
+
+        {
+            FileMgr file(test_file, std::ios::out);
+            
+            std::vector<std::string> vec = {"Vec 1", "Vec 2"};
+            file.write_all(vec);
+            
+            std::array<std::string, 2> arr = {"Arr 1", "Arr 2"};
+            file.write_all(arr);
+            
+            const char* c_arr[] = {"C 1", "C 2"};
+            file.write_all(c_arr);
+        }
+
+        {
+            FileMgr file(test_file, std::ios::in);
+            auto content = file.read_all();
+            CHECK(content.size() == 6);
+            CHECK(content[0] == "Vec 1");
+            CHECK(content[1] == "Vec 2");
+            CHECK(content[2] == "Arr 1");
+            CHECK(content[3] == "Arr 2");
+            CHECK(content[4] == "C 1");
+            CHECK(content[5] == "C 2");
+        }
+
+        std::filesystem::remove(test_file);
+    }
+
+    TEST_CASE("FileMgr write_all with single element") {
+        const std::string test_file = "test_single_element.txt";
+
+        {
+            FileMgr file(test_file, std::ios::out);
+            std::vector<std::string> lines = {"Single line"};
+            file.write_all(lines);
+        }
+
+        {
+            FileMgr file(test_file, std::ios::in);
+            auto content = file.read_all();
+            CHECK(content.size() == 1);
+            CHECK(content[0] == "Single line");
         }
 
         std::filesystem::remove(test_file);
