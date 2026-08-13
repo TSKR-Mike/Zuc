@@ -138,6 +138,14 @@ concept RangeLikeElemTypeSpecified = requires(T& t) {
         ValueType>;
 };
 
+template <typename T, typename ValueType>
+concept RangeLikeElemTypeConvertibleTo = requires(T& t) {
+    RangeLike<T>;
+    requires std::convertible_to<
+        typename std::iterator_traits<decltype(std::begin(t))>::value_type,
+        ValueType>;
+};
+
 template <typename Range>
     requires RangeLike<Range>
 using get_rangelike_value_type =
@@ -150,10 +158,8 @@ using get_rangelike_iterator_type =
     decltype(std::begin(std::declval<Range&>()));
 
 template <typename Range>
-concept SupportsStdSize = requires (Range& r) {
-    std::size(r) && RangeLike<Range>;
-};
-
+concept SupportsStdSize =
+    requires(Range& r) { std::size(r) && RangeLike<Range>; };
 
 template <typename Range>
     requires RangeLike<Range> && SupportsStdSize<Range>
@@ -167,8 +173,6 @@ template <typename Range>
 inline size_t get_rangelike_size(Range& r) {
     return std::distance(std::begin(r), std::end(r));
 }
-
-
 
 // Map like containers
 template <typename T>

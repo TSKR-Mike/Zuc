@@ -179,7 +179,9 @@ inline std::vector<std::string_view> split(std::string_view s, char delim) {
     if (s.empty() || delim == '\0') {
         return {};
     }
+    size_t count = std::count(s.begin(), s.end(), delim);
     std::vector<std::string_view> parts;
+    parts.reserve(count + 1);
     size_t start = 0;
     size_t pos;
     while ((pos = s.find(delim, start)) != std::string_view::npos) {
@@ -275,7 +277,7 @@ inline std::vector<std::string> split_to_string(std::string_view s,
  * @note            Memory is pre‑reserved to avoid reallocations
  */
 inline std::string join(
-    RangeLikeElemTypeSpecified<std::string_view> auto const& strings,
+    RangeLikeElemTypeConvertibleTo<std::string_view> auto const& strings,
     std::string_view delimiter = "") {
     auto begin_it = std::begin(strings);
     auto end_it = std::end(strings);
@@ -286,7 +288,8 @@ inline std::string join(
 
     size_t total = 0;
     for (const auto& sv : strings) {
-        total += sv.size();
+        std::string_view view(sv);
+        total += view.size();
     }
     total += (get_rangelike_size(strings) - 1) * delimiter.size();
 
@@ -296,7 +299,8 @@ inline std::string join(
     size_t i = 0;
     size_t size = get_rangelike_size(strings);
     for (const auto& sv : strings) {
-        result.append(sv.data(), sv.size());
+        std::string_view view(sv);
+        result.append(view.data(), view.size());
         if (i + 1 < size) {
             result.append(delimiter.data(), delimiter.size());
         }
@@ -429,8 +433,9 @@ inline bool contains(std::string_view s,
  * empty
  */
 inline bool contains_any(
-    std::string_view s, RangeLikeElemTypeSpecified<std::string_view> auto const&
-                            contain_strs) noexcept {
+    std::string_view s,
+    RangeLikeElemTypeConvertibleTo<std::string_view> auto const&
+        contain_strs) noexcept {
     if (s.empty()) {
         return false;
     }
@@ -440,7 +445,8 @@ inline bool contains_any(
         return false;
     }
     for (const auto& sub : contain_strs) {
-        if (contains(s, sub)) {
+        std::string_view view(sub);
+        if (contains(s, view)) {
             return true;
         }
     }
@@ -461,8 +467,9 @@ inline bool contains_any(
  */
 
 inline bool contains_all(
-    std::string_view s, RangeLikeElemTypeSpecified<std::string_view> auto const&
-                            contain_strs) noexcept {
+    std::string_view s,
+    RangeLikeElemTypeConvertibleTo<std::string_view> auto const&
+        contain_strs) noexcept {
     if (s.empty()) {
         return false;
     }
@@ -472,7 +479,8 @@ inline bool contains_all(
         return false;
     }
     for (const auto& sub : contain_strs) {
-        if (!contains(s, sub)) {
+        std::string_view view(sub);
+        if (!contains(s, view)) {
             return false;
         }
     }
@@ -552,7 +560,7 @@ inline std::string& remove_all(std::string& s,
  * may interact
  */
 inline std::string& remove_all(
-    std::string& s, RangeLikeElemTypeSpecified<std::string_view> auto const&
+    std::string& s, RangeLikeElemTypeConvertibleTo<std::string_view> auto const&
                         strs_to_be_removed) {
     if (s.empty()) {
         return s;
@@ -563,7 +571,8 @@ inline std::string& remove_all(
         return s;
     }
     for (const auto& pat : strs_to_be_removed) {
-        remove_all(s, pat);
+        std::string_view view(pat);
+        remove_all(s, view);
     }
     return s;
 }
@@ -581,7 +590,7 @@ inline std::string& remove_all(
  * @return                    New string with removals applied
  */
 inline std::string get_all_removed(
-    std::string s, RangeLikeElemTypeSpecified<std::string_view> auto const&
+    std::string s, RangeLikeElemTypeConvertibleTo<std::string_view> auto const&
                        strs_to_be_removed) {
     remove_all(s, strs_to_be_removed);
     return s;
@@ -626,7 +635,7 @@ inline std::string repeat(const std::string& s, size_t times) {
 template <Stringable T>
 inline bool match_any(
     const T& string_obj,
-    RangeLikeElemTypeSpecified<std::string_view> auto const& all_targets) {
+    RangeLikeElemTypeConvertibleTo<std::string_view> auto const& all_targets) {
     auto begin_it = std::begin(all_targets);
     auto end_it = std::end(all_targets);
     if (begin_it == end_it) {
@@ -634,7 +643,8 @@ inline bool match_any(
     }
     std::string str = convert_stringable_to_string(string_obj);
     for (const auto& target : all_targets) {
-        if (str == target) {
+        std::string_view view(target);
+        if (str == view) {
             return true;
         }
     }

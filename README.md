@@ -1,8 +1,20 @@
 # zuc (Zero-overhead Utility Collection)
+> 🏖️ **Active Development Window**: Primarily maintained during **Winter & Summer Breaks**. 
+> Issues and PRs are warmly welcomed but will be reviewed in batches during these periods.
 
-✨ **Modern C++20 Utilities Library**
+## ✨ **Modern C++20 Utilities Library**
 
 zuc is a modern, header-only C++ library that provides fast, intuitive utilities for everyday programming tasks. Built with C++20 standards, it combines performance with convenience - offering zero-allocation views, safe I/O operations, and a growing collection of tools to make C++ development more enjoyable.
+
+## 📑 Table of Contents
+- [Why I Built Zuc](#-why-i-built-zuc-and-why-you-might-need-it)
+- [Key Features](#-key-features)
+- [What's Inside](#-whats-inside)
+- [Quick Start](#-quick-start)
+- [Performance Benchmarks](#-performance-benchmarks)
+- [Examples](#-examples)
+- [Requirements](#-requirements)
+- [Future Plans](#-future-plans)
 
 ## 🔥 Why I Built Zuc (and Why You Might Need It)
 While Abseil and Folly are great, they require heavy dependencies and non-header-only builds. Zuc is designed for developers who want a lightweight, header-only alternative with a focus on modern C++20 features.
@@ -48,7 +60,7 @@ void process() {
 // ✅ Zuc: one-liner RAII guard
 void process() {
     std::mutex m;
-    auto guard = zuc::scope_guard([&] { m.unlock(); });
+    auto guard = generate_scope_guard([&] { m.unlock(); });
     // ... even if early return, mutex is guaranteed to unlock
 }
 ```
@@ -182,42 +194,16 @@ Tested on: GCC, Clang, MSVC (CI passes).
 ### Basic Usage
 ```cpp
 #include "string_kits.hpp"       // For string operations
-#include "io_kits.hpp"           // For file I/O
-#include "time_kits.hpp"         // For time utilities
-#include "span_kits.hpp"         // For span operations
-#include "random_kits.hpp"       // For random number generation
 #include "container_kits.hpp"    // For container operations
-#include "common_concepts.hpp"   // For common type concepts
-#include "numerics_kits.hpp"     // For safe numeric operations
-#include "raii_kits.hpp"         // For RAII utilities
-#include "string_converts.hpp"   // For string conversion
+#include "time_kits.hpp"         // For time utilities
 
 using namespace zuc;
 
-// Start using the library!
-auto text = "  Hello, World!  ";
-auto trimmed = trim(text);  // "Hello, World!"
-
-// Container operations
-std::vector<int> numbers = {1, 2, 3, 4, 5};
-bool found = contains(numbers, 3);  // true
-
-// Random shuffling
-shuffle(numbers);  // Randomize the order
-auto shuffled_copy = shuffled(numbers);  // Get shuffled copy, original unchanged
-
-// Safe numeric operations
-auto sum = checked_add<int>(200, 55);  // Optional<int> containing 255
-if (sum) {
-    // Safe to use the result
-}
-
-// RAII scope guard
-{
-    FILE* file = fopen("data.txt", "r");
-    auto guard = generate_scope_guard([file]() { fclose(file); });
-    // File will be closed automatically
-}
+// Quick examples - see detailed examples below
+auto parts = split("hello,world,cpp", ',');     // Zero-copy string splitting
+auto found = contains(std::vector{1,2,3}, 2);    // Simple container search
+auto safe_sum = checked_add<int>(200, 55);      // Safe arithmetic with overflow check
+auto guard = generate_scope_guard([&] { cleanup(); }); // RAII resource management
 ```
 
 ### Building Tests
@@ -229,6 +215,73 @@ cmake --build .
 ```
 
 **Notice** - You **DON'T** need to clone the CMake files for your own projects. They are included only for building and running the test suite. The CMake files contain personal development settings and are not required for using the library.
+
+## ⚡ Performance Benchmarks
+
+zuc is built with a **zero‑overhead abstraction** philosophy. Our benchmarks indicate that, for common string manipulation and file I/O tasks, zuc performs in the **same ballpark** as Abseil and the standard library — with **competitive, often comparable** results, and occasional wins depending on the operation:
+
+- **vs. Abseil**: zuc shows measurable advantages in hot paths like splitting (up to ~2.8× faster in this test suite), replacing (~1.8×), and joining (~1.34×). For simpler checks such as trimming and `contains()`, it stays close to Abseil (within 0.49×–1.03×), with no major regressions.
+- **vs. iostream**: File read/write throughput is largely on par; formatted line writing demonstrates a ~1.57× improvement in our environment.
+- **Zero‑allocation views**: Operations like `prefix()`, `suffix()`, and `slice()` consistently finish in **6–8 nanoseconds** — proof that you only pay for what you actually use.
+
+> The detailed benchmark results are listed below. All tests were executed on a 22‑core @ 3.07 GHz system `(Run on (22 X 3072 MHz CPU s)
+CPU Caches:L1 Data 48 KiB (x11);L1 Instruction 64 KiB (x11);L2 Unified 2048 KiB (x11);L3 Unified 24576 KiB (x1))` with GCC/Clang/MSVC. Actual numbers may vary across compiler versions and platforms; we recommend running your own benchmarks for your specific workload.
+
+---
+### File I/O Performance
+
+| Benchmark                              | zuc Time | iostream Time                             | Speedup   |
+| -------------------------------------- | -------- | ----------------------------------------- | --------- |
+| Write Small File (100 iterations)      | 345.5 μs | 322.7 μs                                  | 0.93x     |
+| Write Medium File (10 iterations)      | 2.11 ms  | 2.44 ms                                   | 1.15x     |
+| Write Large File (5 iterations)        | 18.6 ms  | 20.9 ms                                   | 1.12x     |
+| Write Lines (100 iterations)           | 800.5 μs | 696.0 μs                                  | 0.87x     |
+| Write Formatted Lines (100 iterations) | 623.9 μs | 980.0 μs(using `stringstream` for format) | **1.57x** |
+| Read Small File (100 iterations)       | 75.7 μs  | 64.1 μs                                   | 0.85x     |
+| Read Medium File (10 iterations)       | 5.91 ms  | 6.24 ms                                   | 1.06x     |
+| Read Lines (100 iterations)            | 809.9 μs | 648.5 μs                                  | 0.80x     |
+
+### String Operations Performance (zuc vs Abseil)
+
+| Benchmark                        | zuc Time | Abseil Time | Speedup   |
+| -------------------------------- | -------- | ----------- | --------- |
+| Join Strings (100 iterations)    | 738 ns   | 990 ns      | **1.34x** |
+| Split by Char (100 iterations)   | 388 ns   | 1,091 ns    | **2.81x** |
+| Split by String (100 iterations) | 855 ns   | 1,354 ns    | **1.58x** |
+| Replace All (100 iterations)     | 295 ns   | 530 ns      | **1.80x** |
+| Trim (100 iterations)            | 43.0 ns  | 37.0 ns     | 0.86x     |
+| Trim Left (100 iterations)       | 68.0 ns  | 33.0 ns     | 0.49x     |
+| Trim Right (100 iterations)      | 38.0 ns  | 37.0 ns     | 1.03x     |
+| Contains (100 iterations)        | 16.0 ns  | 14.0 ns     | 0.88x     |
+
+### zuc String Operations Performance
+
+| Benchmark                        | Time    | Operations/Second |
+| -------------------------------- | ------- | ----------------- |
+| Remove All (100 iterations)      | 454 ns  | ~2.2M/s           |
+| Split to String (100 iterations) | 437 ns  | ~2.3M/s           |
+| Prefix (100 iterations)          | 6.00 ns | ~166M/s           |
+| Suffix (100 iterations)          | 6.00 ns | ~166M/s           |
+| String Slice (100 iterations)    | 8.00 ns | ~125M/s           |
+| Remove Prefix (100 iterations)   | 7.00 ns | ~143M/s           |
+| Remove Suffix (100 iterations)   | 6.00 ns | ~166M/s           |
+| Trim View (100 iterations)       | 18.0 ns | ~55.6M/s          |
+| Repeat (100 iterations)          | 179 ns  | ~5.6M/s           |
+
+**Key Performance Insights:**
+- **String splitting** is significantly faster than Abseil (up to 2.81x speedup)
+- **String joining** outperforms Abseil by 1.34x
+- **Replace operations** are 1.80x faster than Abseil
+- **Formatted line writing** is 1.57x faster than standard iostream
+- **Zero-allocation operations** (prefix, suffix, slice) achieve nanosecond-level performance
+- **File I/O** performance is competitive with standard library, with some operations being faster
+
+**Benchmark Environment:**
+- CPU: 22 cores @ 3072 MHz
+- L1 Cache: 48 KiB (data) × 11, 64 KiB (instruction) × 11
+- L2 Cache: 2048 KiB × 11
+- L3 Cache: 24576 KiB
+- Compiler: C++20 compatible (GCC/Clang/MSVC)
 
 ## 💡 Examples
 
@@ -449,6 +502,7 @@ auto found = find_subspan(main_span, target);
 // found is a span pointing to {4, 5, 6} within main_span
 
 // Concatenate multiple spans into a single view
+// Containers will automatically convert to span views
 std::array<int, 3> part1 = {1, 2, 3};
 std::vector<int> part2 = {4, 5, 6};
 std::array<int, 2> part3 = {7, 8};
@@ -549,11 +603,6 @@ Run tests with:
 ```bash
 cmake --build . && ctest
 ```
-
-## ⚠️ Maintenance Note
-
-This project is maintained in my limited free time. While I appreciate issues and questions, please understand that I may not be able to respond quickly or address all requests promptly. Thank you for your understanding!
-
 ## 🤝 Contributing
 
 Contributions are welcome! Please ensure:
@@ -682,8 +731,15 @@ Tested and verified on:
 - `try_convert_string_to_numerics<T>()` - Safe string to number conversion
 - `is_numeric()` - Check if string represents a number
 
-## ⚠️ Limitations
-- For types that can't be stored in std::optional (e.g., references), functions that return optional currently returns a copy. We're exploring C++26's std::optional improvements.
-- C++20 modules are experimental and I will add support for them in future versions as soon as they are fully supported. Right now the lib only supports header-only.
+## ⚠️ Limitations & Workarounds
+- **std::optional for references**: For types that can't be stored in std::optional (e.g., references), functions that return optional currently return a copy. **Workaround**: Use pointers or `std::reference_wrapper` for reference semantics.
+- **C++20 modules**: Currently experimental. We'll add support once they're fully supported across major compilers. The library is header-only for now.
+
+## 🚀 Future Plans
+- **C++26 Support**: Planning to leverage upcoming std::optional improvements and other C++26 features
+- **Extended Module Support**: Adding C++20 modules support as compiler support matures
+- **Performance Optimizations**: Continuous benchmarking and optimization based on real-world usage
+- **Community Features**: Welcoming feature requests and contributions from the community
+- **Enhanced Documentation**: Expanding examples and use cases based on user feedback
 
 *"Built for convenience, designed for developers who value their time."*
