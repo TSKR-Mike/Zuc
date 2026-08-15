@@ -2,7 +2,7 @@
 
 #include <filesystem>
 #include <fstream>
-#include <ostream>
+#include <array>
 #include <string>
 #include <thread>
 #include <vector>

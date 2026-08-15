@@ -12,8 +12,6 @@
 #include <ios>
 #include <iostream>
 #include <optional>
-#include <ostream>
-#include <span>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -21,7 +19,7 @@
 
 #include "common_concepts.hpp"
 #include "string_kits.hpp"
-#include "container_kits.hpp"
+
 
 #define _CRT_SECURE_NO_WARNINGS  // To ignore fopen warnings on windows
 
@@ -32,7 +30,8 @@ namespace zuc {
 /**
  * @class FileException
  * @brief Exception thrown for file-related errors
- * @note Used when file operations fail due to opening, reading, or writing issues
+ * @note Used when file operations fail due to opening, reading, or writing
+ * issues
  */
 class FileException : public std::runtime_error {
    public:
@@ -72,9 +71,12 @@ enum class ReadLineStatus { EndOfFile, Failed, Success };
 
 /**
  * @class FileMgr
- * @brief RAII wrapper for file I/O operations with automatic resource management
- * @note Provides automatic file closing, move semantics, formatted writing, line-by-line reading, and pointer management
- * @note Copy operations are disabled; use move semantics for transferring ownership
+ * @brief RAII wrapper for file I/O operations with automatic resource
+ * management
+ * @note Provides automatic file closing, move semantics, formatted writing,
+ * line-by-line reading, and pointer management
+ * @note Copy operations are disabled; use move semantics for transferring
+ * ownership
  * @example
  * try {
  *     FileMgr file("data.txt", std::ios::out);
@@ -86,15 +88,15 @@ enum class ReadLineStatus { EndOfFile, Failed, Success };
  */
 class FileMgr {
    private:
-    std::fstream file_;                    // Underlying file stream
-    std::string file_name_;               // Path/name of the opened file
-    bool file_opened_successfully_ = false; // Track if file is valid and open
-    std::ios::openmode mode_;              // File open mode (read/write/etc)
+    std::fstream file_;                      // Underlying file stream
+    std::string file_name_;                  // Path/name of the opened file
+    bool file_opened_successfully_ = false;  // Track if file is valid and open
+    std::ios::openmode mode_;                // File open mode (read/write/etc)
 
    protected:
    public:
     // ---- Constructors ----
-    
+
     /**
      * @brief Construct FileMgr from C-style string path
      * @param path File path as C-string
@@ -160,15 +162,15 @@ class FileMgr {
      * @note Ensures proper resource cleanup even if exceptions occur
      */
     ~FileMgr() {
-    try {
-        if (file_.is_open()) {
-            file_.flush();  // Ensure all data is written
-            file_.close();  // Close the file
+        try {
+            if (file_.is_open()) {
+                file_.flush();  // Ensure all data is written
+                file_.close();  // Close the file
+            }
+        } catch (...) {
+            // Ignore exceptions in destructor
         }
-    } catch (...) {
-        // Ignore exceptions in destructor
     }
-}
 
     // Copy operations disabled - files cannot be safely copied
     FileMgr(const FileMgr&) = delete;
@@ -210,7 +212,7 @@ class FileMgr {
     };
 
     // ---- Public methods ----
-    
+
     /**
      * @brief Check if file is successfully opened and valid
      * @return true if file is open and valid, false otherwise
@@ -232,35 +234,37 @@ class FileMgr {
      * @brief Read all lines from the file into a vector
      * @return Vector of strings containing each line
      * @throws FileException if file is not open or reading fails
-     * @note Resets read pointer to beginning before reading. Handles both Unix (\n) and Windows (\r\n) line endings
+     * @note Resets read pointer to beginning before reading. Handles both Unix
+     * (\n) and Windows (\r\n) line endings
      */
     std::vector<std::string> read_all() {
         if (!is_valid()) {
             throw FileException("File is not opened");
         }
         reset_read_pointer_to_front();
-        ReadLineStatus status = ReadLineStatus::Success;
         std::vector<std::string> contents;
-        std::optional<std::string> line;
-        do {
-            auto result = read_a_line();
-            status = result.first;
-            line = result.second;
-            if (line.has_value()) {
-                contents.push_back(line.value());
-            }
+        std::string line;
 
-        } while (status == ReadLineStatus::Success);
-        if (status == ReadLineStatus::Failed) {
+        while (std::getline(file_, line)) {
+            if (!line.empty() && line.back() == '\r') {
+                line.pop_back();
+            }
+            contents.push_back(line);
+        }
+
+        if (file_.bad()) {
             throw FileException("Failed to read the file.");
         }
+
+        file_.clear();
         return contents;
     }
 
     /**
      * @brief Read a single line from the file
      * @return Pair containing status and optional line content
-     * @note Returns {Success, line} on successful read, {EndOfFile, nullopt} when end of file is reached, {Failed, nullopt} on read error
+     * @note Returns {Success, line} on successful read, {EndOfFile, nullopt}
+     * when end of file is reached, {Failed, nullopt} on read error
      * @note Handles Windows line endings (\r\n) by removing trailing \r
      */
     std::pair<ReadLineStatus, std::optional<std::string>> read_a_line() {
@@ -269,7 +273,7 @@ class FileMgr {
         }
         std::string line;
         std::getline(file_, line);
-        
+
         if (file_.eof()) {
             file_.clear();
             // Handle Windows line endings
@@ -286,12 +290,12 @@ class FileMgr {
             // Something went wrong during read
             return {ReadLineStatus::Failed, std::nullopt};
         }
-        
+
         // Handle Windows line endings for normal reads
         if (!line.empty() && line.back() == '\r') {
             line.pop_back();
         }
-        
+
         return {ReadLineStatus::Success, line};
     }
 
@@ -315,15 +319,18 @@ class FileMgr {
     }
 
     /**
-     * @brief Write formatted content to file without adding a newline using std::format syntax
+     * @brief Write formatted content to file without adding a newline using
+     * std::format syntax
      * @param fmt Format string using C++20 std::format syntax
      * @param args Arguments to format into the format string
      * @throws FileException if file is not open or formatting fails
      * @note Uses C++20 std::format for type-safe, flexible formatting
-     * @note The formatted content is written as-is without any trailing newline character
+     * @note The formatted content is written as-is without any trailing newline
+     * character
      * @note Use write_a_line() if you want automatic newline termination
      * @example
-     * file.write_a_string("Number: {}", 42);  // Writes "Number: 42" (no newline)
+     * file.write_a_string("Number: {}", 42);  // Writes "Number: 42" (no
+     * newline)
      */
     template <typename... Args>
     void write_a_string(const std::format_string<Args...> fmt, Args&&... args) {
@@ -343,8 +350,10 @@ class FileMgr {
      * @brief Write stringable content to file followed by a newline
      * @param content Content to write (must satisfy Stringable concept)
      * @throws FileException if file is not open
-     * @note Content is written followed by a platform-appropriate newline character
-     * @note The file stream is not automatically flushed after each write for performance reasons
+     * @note Content is written followed by a platform-appropriate newline
+     * character
+     * @note The file stream is not automatically flushed after each write for
+     * performance reasons
      * @example
      * file.write_a_line("Hello, World!");  // Writes "Hello, World!\n"
      * file.write_a_line(42);                // Writes "42\n"
@@ -361,12 +370,14 @@ class FileMgr {
     /**
      * @brief Write multiple items to file, one per line
      * @param all_content Range of stringable items to write
-     * @note Each item is written on its own line followed by a newline character
-     * @note If file is not valid, this function silently returns without throwing an exception
+     * @note Each item is written on its own line followed by a newline
+     * character
+     * @note If file is not valid, this function silently returns without
+     * throwing an exception
      * @example
      * std::vector<std::string> lines = {"Line 1", "Line 2", "Line 3"};
      * file.write_all(lines);  // Writes each string on a separate line
-     * 
+     *
      * std::array<const char*, 3> arr = {"Line 1", "Line 2", "Line 3"};
      * file.write_all(arr);  // Also works with arrays
      */
@@ -381,14 +392,17 @@ class FileMgr {
     }
 
     /**
-     * @brief Write formatted content to file followed by a newline using std::format syntax
+     * @brief Write formatted content to file followed by a newline using
+     * std::format syntax
      * @param fmt Format string using C++20 std::format syntax
      * @param args Arguments to format into the format string
      * @throws FileException if file is not open or formatting fails
      * @note Uses C++20 std::format for type-safe, flexible formatting
-     * @note The formatted content is written followed by a platform-appropriate newline character
+     * @note The formatted content is written followed by a platform-appropriate
+     * newline character
      * @example
-     * file.write_a_line("Number: {}, Text: '{}'", 42, "hello");  // Writes "Number: 42, Text: 'hello'\n"
+     * file.write_a_line("Number: {}, Text: '{}'", 42, "hello");  // Writes
+     * "Number: 42, Text: 'hello'\n"
      */
     template <typename... Args>
     void write_a_line(const std::format_string<Args...> fmt, Args&&... args) {
@@ -440,11 +454,10 @@ class FileMgr {
     /**
      * @brief Get reference to underlying fstream
      * @return Reference to the internal std::fstream
-     * @warning FOR DEBUG ONLY. DO NOT CLOSE THE STREAM RETURNED! THIS MAY LEAD TO SERIOUS ERRORS
+     * @warning FOR DEBUG ONLY. DO NOT CLOSE THE STREAM RETURNED! THIS MAY LEAD
+     * TO SERIOUS ERRORS
      */
-    std::fstream& get_stream() {
-        return file_;
-    }
+    std::fstream& get_stream() { return file_; }
 
     /**
      * @brief Flush the file stream to ensure all data is written
@@ -459,8 +472,6 @@ class FileMgr {
             file_.flush();
         }
     }
-
-    
 };
 
 // ---- Console I/O functions ----
@@ -522,7 +533,8 @@ inline void write_a_line_to_console(const std::string& line) {
  * @param prompt_fmt_str Format string for the prompt
  * @param prompt_args Arguments for the prompt format string
  * @return String containing the user's input (without trailing newline)
- * @note Displays a formatted prompt and reads user input from stdin. Handles Windows line endings (\r\n) by removing the trailing \r
+ * @note Displays a formatted prompt and reads user input from stdin. Handles
+ * Windows line endings (\r\n) by removing the trailing \r
  */
 template <typename... Args>
 inline std::string read_a_line_from_console(
@@ -535,7 +547,7 @@ inline std::string read_a_line_from_console(
     } catch (const std::format_error&) {
         write_string_to_console("{}", prompt_fmt_str.get());
     }
-    
+
     std::cin.clear();
     std::string line;
     if (!std::getline(std::cin, line)) {
@@ -555,7 +567,8 @@ inline std::string read_a_line_from_console(
  * @brief Open file with error handling
  * @param path Path to the file
  * @return Optional FileMgr, or nullopt if opening fails
- * @note Provides a non-throwing alternative to FileMgr constructor. Errors are printed to console instead of being thrown
+ * @note Provides a non-throwing alternative to FileMgr constructor. Errors are
+ * printed to console instead of being thrown
  */
 inline std::optional<FileMgr> open_file(const std::string& path) {
     try {

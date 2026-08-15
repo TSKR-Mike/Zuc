@@ -224,28 +224,30 @@ Zuc is designed with a zero‑overhead abstraction philosophy. The following ben
 
 | Category        | Operation         | Performance        |
 | --------------- | ----------------- | ------------------ |
-| **vs Abseil**   | Split by Char     | **3.28× faster**   |
-| **vs Abseil**   | Replace All       | **1.35× faster**   |
-| **vs Abseil**   | Join Strings      | **1.32× faster**   |
-| **vs Abseil**   | Trim Right        | **2.09× faster**   |
-| **vs iostream** | Formatted Write   | **1.75× faster**   |
-| **vs iostream** | Medium File Write | **2.01× faster**   |
+| **vs Abseil**   | Split by Char     | **2.35× faster**   |
+| **vs Abseil**   | Split by String   | **1.24× faster**   |
+| **vs Abseil**   | Trim Right        | **1.37× faster**   |
+| **vs iostream** | Formatted Write   | **1.60× faster**   |
+| **vs iostream** | Medium File Write | **1.23× faster**   |
+| **vs iostream** | Large File Write  | **1.17× faster**   |
 | **Zero-alloc**  | View Operations   | **~100M+ ops/sec** |
 
 ### 📊 Detailed Results
+> Summary: Overall, Zuc can achieve similar performance to abseil/iostream, with a nicer api without costing too much.
 
+![Performance Benchmarks](performance_benchmarks.png)
 #### File I/O Performance (zuc vs iostream)
 
 | Benchmark                              | zuc Time | iostream Time | Speedup   |
 | -------------------------------------- | -------- | ------------- | --------- |
-| Write Small File (100 iterations)      | 312.5 μs | 468.8 μs      | **1.50x** |
-| Write Medium File (10 iterations)      | 1.56 ms  | 3.13 ms       | **2.01x** |
-| Write Large File (5 iterations)        | 18.8 ms  | 18.8 ms       | 1.00x     |
-| Write Lines (100 iterations)           | 781.3 μs | 781.3 μs      | 1.00x     |
-| Write Formatted Lines (100 iterations) | 625.0 μs | 1093.8 μs     | **1.75x** |
-| Read Small File (100 iterations)       | ~0 μs    | 156.3 μs      | ∞         |
-| Read Medium File (10 iterations)       | 6.25 ms  | 7.81 ms       | **1.25x** |
-| Read Lines (100 iterations)            | 937.5 μs | 937.5 μs      | 1.00x     |
+| Write Small File (100 iterations)      | 307.8 μs | 308.1 μs      | 1.00x     |
+| Write Medium File (10 iterations)      | 1.90 ms  | 2.34 ms       | **1.23x** |
+| Write Large File (5 iterations)        | 18.5 ms  | 21.6 ms       | **1.17x** |
+| Write Lines (100 iterations)           | 717.3 μs | 726.3 μs      | 1.01x     |
+| Write Formatted Lines (100 iterations) | 648.1 μs | 1039.0 μs     | **1.60x** |
+| Read Small File (100 iterations)       | 63.8 μs  | 62.2 μs       | 0.97x     |
+| Read Medium File (10 iterations)       | 5.39 ms  | 6.62 ms       | **1.23x** |
+| Read Lines (100 iterations)            | 662.9 μs | 644.1 μs      | 0.97x     |
 
 #### ⚡ I/O Performance: Wrapper Overhead Is Negligible
 
@@ -270,7 +272,7 @@ The following table shows one representative run on our test machine (Clang 22, 
 | Write Medium File (10 iters)          | 2.01 ms    | 2.40 ms       | 1.19×     |
 | Write Large File (5 iters)            | 16.5 ms    | 17.2 ms       | 1.04×     |
 | Write Lines (100 iters)               | 825 µs     | 775 µs        | 0.94×     |
-| **Write Formatted Lines (100 iters)** | **695 µs** | **1054 µs**   | **1.52×** |
+| **Write Formatted Lines (100 iters)** | **695 µs** | **1054 µs**(using `stringstream`)   | **1.52×** |
 | Read Small File (100 iters)           | 86.8 µs    | 68.8 µs       | 0.79×     |
 | Read Medium File (10 iters)           | 6.19 ms    | 7.87 ms       | 1.27×     |
 | Read Lines (100 iters)                | 962 µs     | 983 µs        | 1.02×     |
@@ -281,28 +283,28 @@ The following table shows one representative run on our test machine (Clang 22, 
 
 | Benchmark                        | zuc Time | Abseil Time | Speedup   |
 | -------------------------------- | -------- | ----------- | --------- |
-| Join Strings (100 iterations)    | 701 ns   | 922 ns      | **1.32x** |
-| Split by Char (100 iterations)   | 271 ns   | 888 ns      | **3.28x** |
-| Split by String (100 iterations) | 954 ns   | 923 ns      | 0.97x     |
-| Replace All (100 iterations)     | 773 ns   | 1040 ns     | **1.35x** |
-| Trim (100 iterations)            | 87.0 ns  | 76.0 ns     | 0.87x     |
-| Trim Left (100 iterations)       | 82.0 ns  | 57.0 ns     | 0.70x     |
-| Trim Right (100 iterations)      | 55.0 ns  | 115 ns      | **2.09x** |
-| Contains (100 iterations)        | 19.0 ns  | 26.0 ns     | **1.37x** |
+| Join Strings (100 iterations)    | 689 ns   | 602 ns      | 0.87x     |
+| Split by Char (100 iterations)   | 205 ns   | 482 ns      | **2.35x** |
+| Split by String (100 iterations) | 661 ns   | 817 ns      | **1.24x** |
+| Replace All (100 iterations)     | 737 ns   | 439 ns      | 0.60x     |
+| Trim (100 iterations)            | 61.9 ns  | 33.0 ns     | 0.53x     |
+| Trim Left (100 iterations)       | 49.3 ns  | 32.3 ns     | 0.66x     |
+| Trim Right (100 iterations)      | 47.6 ns  | 34.6 ns     | **1.37x** |
+| Contains (100 iterations)        | 11.8 ns  | 11.6 ns     | 1.02x     |
 
 #### zuc Internal Performance
 
-| Benchmark                        | Time     | Operations/Second |
-| -------------------------------- | -------- | ----------------- |
-| Remove All (100 iterations)      | 1193 ns  | ~838k/s           |
-| Split to String (100 iterations) | 708 ns   | ~1.4M/s           |
-| Prefix (100 iterations)          | 9.00 ns  | ~111M/s           |
-| Suffix (100 iterations)          | 10.00 ns | ~100M/s           |
-| String Slice (100 iterations)    | 8.00 ns  | ~125M/s           |
-| Remove Prefix (100 iterations)   | 8.00 ns  | ~125M/s           |
-| Remove Suffix (100 iterations)   | 8.00 ns  | ~125M/s           |
-| Trim View (100 iterations)       | 16.0 ns  | ~62.5M/s          |
-| Repeat (100 iterations)          | 296 ns   | ~3.4M/s           |
+| Benchmark                        | Time    | Operations/Second |
+| -------------------------------- | ------- | ----------------- |
+| Remove All (100 iterations)      | 639 ns  | ~1.6M/s           |
+| Split to String (100 iterations) | 365 ns  | ~2.7M/s           |
+| Prefix (100 iterations)          | 2.50 ns | ~400M/s           |
+| Suffix (100 iterations)          | 2.70 ns | ~370M/s           |
+| String Slice (100 iterations)    | 2.60 ns | ~385M/s           |
+| Remove Prefix (100 iterations)   | 2.60 ns | ~385M/s           |
+| Remove Suffix (100 iterations)   | 3.20 ns | ~313M/s           |
+| Trim View (100 iterations)       | 11.9 ns | ~84M/s            |
+| Repeat (100 iterations)          | 141 ns  | ~7.1M/s           |
 
 ### ⚠️ Benchmark Notes
 

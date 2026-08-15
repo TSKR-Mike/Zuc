@@ -149,7 +149,7 @@ double inline uniform_random_double(double min, double max) {
  * @note Uses the global Mersenne Twister generator for reproducibility
  * @note Container must support random access (vector, deque, array, etc.)
  */
-template <typename Container>
+template <typename Container> requires RangeLike<Container>
 void shuffle(Container& c) {
     std::shuffle(std::begin(c), std::end(c), global_generator);
 }
@@ -163,7 +163,7 @@ void shuffle(Container& c) {
  * @note Allows flexibility to use different random engines
  * @note Container must support random access (vector, deque, array, etc.)
  */
-template <typename Container, typename URBG>
+template <typename Container, typename URBG> requires RangeLike<Container>
 void shuffle(Container& c, URBG&& g) {
     std::shuffle(std::begin(c), std::end(c), std::forward<URBG>(g));
 }
@@ -176,7 +176,7 @@ void shuffle(Container& c, URBG&& g) {
  * @note Original container remains unchanged
  * @note Container must support random access (vector, deque, array, etc.)
  */
-template <typename Container>
+template <typename Container> requires RangeLike<Container>
 Container shuffled(Container c) {
     shuffle(c);
     return c;

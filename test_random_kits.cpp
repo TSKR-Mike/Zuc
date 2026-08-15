@@ -1,7 +1,8 @@
 // tests/test_random_kits.cpp
 #include <algorithm>
-#include <ostream>
+#include <deque>
 #include <vector>
+#include <array>
 
 #include "doctest.h"
 #include "include/io_kits.hpp"
