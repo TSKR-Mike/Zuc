@@ -8,9 +8,11 @@
  */
 
 #pragma once
+#include <climits>  // for INT8_MIN, INT8_MAX, UINT8_MAX, etc.
+#include <cmath>
+#include <cstdint>  // for uint8_t, uint16_t, uint32_t, uint64_t, int8_t, int16_t, int32_t, int64_t
 #include <limits>
 #include <optional>
-#include <cmath>
 
 namespace zuc {
 
