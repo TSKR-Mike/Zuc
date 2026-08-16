@@ -302,7 +302,7 @@ constexpr To saturate_cast(From value) noexcept {
         constexpr To min = std::numeric_limits<To>::min();
         constexpr To max = std::numeric_limits<To>::max();
         // deal NaN and inf
-        if (isnan(value)) {
+        if (std::isnan(value)) {
             // NaN → integral: return 0
             return To{0};
         }
@@ -325,7 +325,7 @@ constexpr To saturate_cast(From value) noexcept {
         if (isinf(value)) {
             return value > 0 ? max : min;
         }
-        if (isnan(value)) {
+        if (std::isnan(value)) {
             // NaN → floating: return 0
             if constexpr (std::numeric_limits<To>::has_quiet_NaN)
                 return std::numeric_limits<To>::quiet_NaN();
