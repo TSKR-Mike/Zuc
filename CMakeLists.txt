@@ -20,6 +20,12 @@ add_executable(zuc_test
     test_numerics_kits.cpp
 )
 enable_testing()
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-instr-generate -fcoverage-mapping -O0 -g")
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fprofile-instr-generate")
+target_compile_options(zuc_test PRIVATE
+    $<$<CXX_COMPILER_ID:Clang>:-fprofile-instr-generate -fcoverage-mapping>
+    $<$<CXX_COMPILER_ID:AppleClang>:-fprofile-instr-generate -fcoverage-mapping>
+)
+target_link_options(zuc_test PRIVATE
+    $<$<CXX_COMPILER_ID:Clang>:-fprofile-instr-generate>
+    $<$<CXX_COMPILER_ID:AppleClang>:-fprofile-instr-generate>
+)
 add_test(NAME zuc_test COMMAND zuc_test)
