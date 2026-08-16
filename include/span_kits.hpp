@@ -332,7 +332,6 @@ class ConcatSpan {
                 offset += span.size();
             }
             assert(false && "unreachable");
-            __builtin_unreachable();
         }
 
        private:
@@ -483,7 +482,6 @@ class ConcatSpan {
                 offset += span.size();
             }
             assert(false && "unreachable");
-            __builtin_unreachable();
         }
 
        protected:

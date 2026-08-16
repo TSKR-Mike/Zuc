@@ -13,73 +13,75 @@
 #include <cstdint>  // for uint8_t, uint16_t, uint32_t, uint64_t, int8_t, int16_t, int32_t, int64_t
 #include <limits>
 #include <optional>
-
+#include <cmath>
 namespace zuc {
+    /**
+     * @struct select_by_max_unsigned
+     * @brief Compile-time type selector based on maximum unsigned value
+     * @tparam Value The maximum value the type needs to hold
+     * @note Selects the smallest unsigned integer type that can hold the
+     * specified value Selection order: uint8_t → uint16_t → uint32_t → uint64_t
+     * @example
+     * using Type1 = select_by_max_unsigned_t<255>;   // uint8_t
+     * using Type2 = select_by_max_unsigned_t<256>;   // uint16_t
+     * using Type3 = select_by_max_unsigned_t<65535>; // uint16_t
+     * using Type4 = select_by_max_unsigned_t<65536>; // uint32_t
+     */
+    template <unsigned long long Value>
+    struct select_by_max_unsigned {
+        static consteval unsigned long long get_value() { return Value; }
 
-/**
- * @struct select_by_max_unsigned
- * @brief Compile-time type selector based on maximum unsigned value
- * @tparam Value The maximum value the type needs to hold
- * @note Selects the smallest unsigned integer type that can hold the specified
- * value Selection order: uint8_t → uint16_t → uint32_t → uint64_t
- * @example
- * using Type1 = select_by_max_unsigned_t<255>;   // uint8_t
- * using Type2 = select_by_max_unsigned_t<256>;   // uint16_t
- * using Type3 = select_by_max_unsigned_t<65535>; // uint16_t
- * using Type4 = select_by_max_unsigned_t<65536>; // uint32_t
- */
-template <unsigned long long Value>
-struct select_by_max_unsigned {
-    static consteval unsigned long long get_value() { return Value; }
-
-    using type = std::conditional_t<
-        Value <= 0xFF, std::uint8_t,
-        std::conditional_t<Value <= 0xFFFF, std::uint16_t,
-                           std::conditional_t<Value <= 0xFFFFFFFF,
-                                              std::uint32_t, std::uint64_t>>>;
-};
-
-template <unsigned long long Value>
-using select_by_max_unsigned_t = typename select_by_max_unsigned<Value>::type;
-
-/**
- * @struct select_by_range
- * @brief Compile-time type selector based on value range
- * @tparam Min Minimum value the type needs to hold
- * @tparam Max Maximum value the type needs to hold
- * @note Selects the smallest integer type (signed or unsigned) that can hold
- * the specified range For signed ranges: checks both Min and Max bounds For
- * unsigned ranges: only checks Max bound (Min is assumed to be >= 0)
- * @example
- * using SignedType = select_by_range_t<-100, 100>;    // int8_t
- * using UnsignedType = select_by_range_t<0, 255>;     // uint8_t
- * using LargeType = select_by_range_t<0, 100000>;    // uint32_t
- */
-template <long long Min, long long Max>
-struct select_by_range {
-    static_assert(Min <= Max, "Min must be <= Max");
-    static constexpr bool is_signed = Min < 0;
-
-    using type = std::conditional_t<
-        is_signed,
-        std::conditional_t<
-            (Min >= INT8_MIN && Max <= INT8_MAX), int8_t,
+        using type = std::conditional_t<
+            Value <= 0xFF, std::uint8_t,
             std::conditional_t<
-                (Min >= INT16_MIN && Max <= INT16_MAX), int16_t,
-                std::conditional_t<(Min >= INT32_MIN && Max <= INT32_MAX),
-                                   int32_t, int64_t>>>,
-        std::conditional_t<
-            (Max <= UINT8_MAX), uint8_t,
+                Value <= 0xFFFF, std::uint16_t,
+                std::conditional_t<Value <= 0xFFFFFFFF, std::uint32_t,
+                                   std::uint64_t>>>;
+    };
+
+    template <unsigned long long Value>
+    using select_by_max_unsigned_t =
+        typename select_by_max_unsigned<Value>::type;
+
+    /**
+     * @struct select_by_range
+     * @brief Compile-time type selector based on value range
+     * @tparam Min Minimum value the type needs to hold
+     * @tparam Max Maximum value the type needs to hold
+     * @note Selects the smallest integer type (signed or unsigned) that can
+     * hold the specified range For signed ranges: checks both Min and Max
+     * bounds For unsigned ranges: only checks Max bound (Min is assumed to be
+     * >= 0)
+     * @example
+     * using SignedType = select_by_range_t<-100, 100>;    // int8_t
+     * using UnsignedType = select_by_range_t<0, 255>;     // uint8_t
+     * using LargeType = select_by_range_t<0, 100000>;    // uint32_t
+     */
+    template <long long Min, long long Max>
+    struct select_by_range {
+        static_assert(Min <= Max, "Min must be <= Max");
+        static constexpr bool is_signed = Min < 0;
+
+        using type = std::conditional_t<
+            is_signed,
             std::conditional_t<
-                (Max <= UINT16_MAX), uint16_t,
-                std::conditional_t<(Max <= UINT32_MAX), uint32_t, uint64_t>>>>;
-};
+                (Min >= INT8_MIN && Max <= INT8_MAX), int8_t,
+                std::conditional_t<
+                    (Min >= INT16_MIN && Max <= INT16_MAX), int16_t,
+                    std::conditional_t<(Min >= INT32_MIN && Max <= INT32_MAX),
+                                       int32_t, int64_t>>>,
+            std::conditional_t<
+                (Max <= UINT8_MAX), uint8_t,
+                std::conditional_t<(Max <= UINT16_MAX), uint16_t,
+                                   std::conditional_t<(Max <= UINT32_MAX),
+                                                      uint32_t, uint64_t>>>>;
+    };
 
-template <long long Min, long long Max>
-using select_by_range_t = typename select_by_range<Min, Max>::type;
+    template <long long Min, long long Max>
+    using select_by_range_t = typename select_by_range<Min, Max>::type;
 
-template <long long Value>
-using select_by_value_t = typename select_by_range<Value, Value>::type;
+    template <long long Value>
+    using select_by_value_t = typename select_by_range<Value, Value>::type;
 
 #ifdef _MSC_VER
 #include <intrin.h>
@@ -307,7 +309,7 @@ constexpr To saturate_cast(From value) noexcept {
             return To{0};
         }
         // inf → integral: return max or min
-        if (isinf(value)) {
+        if (std::isinf(value)) {
             return value > 0 ? max : min;
         }
         // floating → integral: saturate
@@ -322,7 +324,7 @@ constexpr To saturate_cast(From value) noexcept {
         // floating → floating: never overflow, just saturate
         constexpr To min = std::numeric_limits<To>::lowest();
         constexpr To max = std::numeric_limits<To>::max();
-        if (isinf(value)) {
+        if (std::isinf(value)) {
             return value > 0 ? max : min;
         }
         if (std::isnan(value)) {

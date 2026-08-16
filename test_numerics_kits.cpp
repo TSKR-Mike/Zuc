@@ -96,8 +96,10 @@ TEST_CASE("checked_add") {
     CHECK(checked_add<int32_t>(2147483647, 1) == std::nullopt);
     CHECK(checked_add<int64_t>(9223372036854775807LL, 0) == std::optional<int64_t>(9223372036854775807LL));
     CHECK(checked_add<int64_t>(9223372036854775807LL, 1) == std::nullopt);
-    CHECK(checked_add<int64_t>(-9223372036854775808LL, -1) == std::nullopt);
-    CHECK(checked_add<int64_t>(-9223372036854775808LL, 0) == std::optional<int64_t>(-9223372036854775808LL));
+    CHECK(checked_add<int64_t>(std::numeric_limits<int64_t>::min(), -1) ==
+          std::nullopt);
+    CHECK(checked_add<int64_t>(std::numeric_limits<int64_t>::min(), 0) ==
+          std::optional<int64_t>(std::numeric_limits<int64_t>::min()));
 
     // mixed signs
     CHECK(checked_add<int8_t>(-128, 1) == std::optional<int8_t>(-127));
@@ -125,7 +127,8 @@ TEST_CASE("checked_sub") {
     CHECK(checked_sub<int16_t>(32767, -1) == std::nullopt);
     CHECK(checked_sub<int32_t>(2147483647, -1) == std::nullopt);
     CHECK(checked_sub<int64_t>(9223372036854775807LL, -1) == std::nullopt);
-    CHECK(checked_sub<int64_t>(-9223372036854775808LL, 1) == std::nullopt);
+    CHECK(checked_sub<int64_t>(std::numeric_limits<int64_t>::min(), 1) ==
+          std::nullopt);
 }
 
 // -----------------------------------------------------------------------------
@@ -158,8 +161,10 @@ TEST_CASE("checked_mul") {
     CHECK(checked_mul<int64_t>(9223372036854775807LL, 0) == std::optional<int64_t>(0));
     CHECK(checked_mul<int64_t>(9223372036854775807LL, 1) == std::optional<int64_t>(9223372036854775807LL));
     CHECK(checked_mul<int64_t>(9223372036854775807LL, 2) == std::nullopt);
-    CHECK(checked_mul<int64_t>(-9223372036854775808LL, 1) == std::optional<int64_t>(-9223372036854775808LL));
-    CHECK(checked_mul<int64_t>(-9223372036854775808LL, 2) == std::nullopt);
+    CHECK(checked_mul<int64_t>(std::numeric_limits<int64_t>::min(), 1) ==
+          std::optional<int64_t>(std::numeric_limits<int64_t>::min()));
+    CHECK(checked_mul<int64_t>(std::numeric_limits<int64_t>::min(), 2) ==
+          std::nullopt);
 }
 
 // -----------------------------------------------------------------------------
