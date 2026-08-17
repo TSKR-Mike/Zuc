@@ -22,6 +22,10 @@
 
 #include "io_kits.hpp"
 
+#ifdef __APPLE__
+#define ZUC_DROP_TIMEZONE
+#endif
+
 namespace zuc {
 using std::chrono::duration;
 using std::chrono::duration_cast;
@@ -347,7 +351,6 @@ inline void sleep(double secs) {
 }
 
 // To support LLVM19(chrono not fully implemented)
-#ifndef ZUC_DROP_CHRONO_TIME_ZONE
 class DateTime {
    public:
     using Duration = std::chrono::microseconds;
@@ -360,16 +363,26 @@ class DateTime {
     // Factory methods
     static DateTime now() {
         auto sys_t_now = system_clock::now();
+#ifndef ZUC_DROP_TIMEZONE
         auto local_tp = std::chrono::current_zone()->to_local(sys_t_now);
         return DateTime(std::chrono::time_point_cast<Duration>(local_tp));
+#else
+        // Fallback to UTC when timezone support is not available
+        return DateTime(std::chrono::time_point_cast<Duration>(sys_t_now));
+#endif
     }
     static DateTime from_timestamp(double seconds) {
         using namespace std::chrono;
         sys_time<Duration> sys_tp = sys_time<Duration>{
             duration_cast<Duration>(duration<double>(seconds))};
+#ifndef ZUC_DROP_TIMEZONE
         // Convert to local time
         auto local_tp = current_zone()->to_local(sys_tp);
         return DateTime(local_tp);
+#else
+        // Fallback to UTC when timezone support is not available
+        return DateTime(sys_tp);
+#endif
     }
 
     static DateTime from_ymd(int year_v, int month_v, int day_v, int hour_v = 0,
@@ -439,11 +452,18 @@ class DateTime {
     }
     double time_stamp() const {
         using namespace std::chrono;
+#ifndef ZUC_DROP_TIMEZONE
         // Convert local_time to system_clock to get UTC seconds since epoch
         auto sys_tp = current_zone()->to_sys(tp_);
         auto total_duration =
             duration_cast<duration<double>>(sys_tp.time_since_epoch());
         return total_duration.count();
+#else
+        // When using UTC directly, just get the duration since epoch
+        auto total_duration =
+            duration_cast<duration<double>>(tp_.time_since_epoch());
+        return total_duration.count();
+#endif
     }
     DateTime& operator+=(const Duration& delta) {
         tp_ += delta;
@@ -477,7 +497,6 @@ class DateTime {
     TimePoint tp_;
     explicit DateTime(TimePoint t) : tp_(t) {}
 };
-#endif
 
 class CountDownTimer {
     using Duration = std::chrono::duration<double>;  // in seconds
@@ -514,14 +533,17 @@ class CountDownTimer {
             return std::nullopt;
         }
         if (paused_) {
-            double remaining = total_duration_.count() - time_passed_before_pause_.count();
+            double remaining =
+                total_duration_.count() - time_passed_before_pause_.count();
             return remaining >= 0.0 ? remaining : 0.0;
         }
-        
+
         // Calculate elapsed time as Duration (double seconds)
-        Duration elapsed = std::chrono::duration_cast<Duration>(Clock::now() - start_time_);
-        Duration remaining = total_duration_ - elapsed - time_passed_before_pause_;
-        
+        Duration elapsed =
+            std::chrono::duration_cast<Duration>(Clock::now() - start_time_);
+        Duration remaining =
+            total_duration_ - elapsed - time_passed_before_pause_;
+
         if (remaining.count() <= 0.0) {
             return 0.0;
         } else {
@@ -576,11 +598,13 @@ class CountDownTimer {
         if (paused_) {
             remaining = total_duration_ - time_passed_before_pause_;
         } else {
-            // Calculate elapsed time as Duration (double seconds) for consistent arithmetic
-            Duration elapsed = std::chrono::duration_cast<Duration>(Clock::now() - start_time_);
+            // Calculate elapsed time as Duration (double seconds) for
+            // consistent arithmetic
+            Duration elapsed = std::chrono::duration_cast<Duration>(
+                Clock::now() - start_time_);
             remaining = total_duration_ - elapsed - time_passed_before_pause_;
         }
-        
+
         // Protect the result to be positive or 0
         if (remaining.count() < 0.0) {
             remaining = Duration::zero();

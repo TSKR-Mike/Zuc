@@ -8,7 +8,6 @@
 #include "include/io_kits.hpp"
 #include "include/time_kits.hpp"
 
-
 using namespace zuc;
 
 /**
@@ -472,9 +471,8 @@ TEST_SUITE("Timing Setting and Benchmarking") {
 
 /**
  * @test DateTime Class
- * Tests for DateTime class functionality (when available).
+ * Tests for DateTime class functionality.
  */
-#ifndef ZUC_DROP_CHRONO_TIME_ZONE
 TEST_SUITE("DateTime Class") {
     TEST_CASE("DateTime now") {
         auto now = DateTime::now();
@@ -585,7 +583,6 @@ TEST_SUITE("DateTime Class") {
         CHECK(dt2.get_day() == 15);
     }
 }
-#endif
 
 /**
  * @test Time Edge Cases
