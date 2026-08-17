@@ -21,6 +21,8 @@ jobs:
             compiler: msvc
           - os: windows-latest
             compiler: clang
+          - os: ubuntu-latest
+            compiler: msvc
 
     runs-on: ${{ matrix.os }}
 
