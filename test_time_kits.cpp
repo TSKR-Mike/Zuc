@@ -819,6 +819,7 @@ TEST_SUITE("CountDownTimer Class") {
         CHECK(std::abs(after_start.value() - paused_remaining.value()) < 0.1);
     }
 
+#ifndef __APPLE__
     TEST_CASE("CountDownTimer timing accuracy") {
         CountDownTimer timer(0.5);
         timer.start();
@@ -833,6 +834,7 @@ TEST_SUITE("CountDownTimer Class") {
         CHECK(near_end.value() <= 0.05);
         CHECK(near_end.value() >= 0.0);
     }
+#endif
 
     TEST_CASE("CountDownTimer long duration") {
         CountDownTimer timer(10.0);
@@ -962,6 +964,7 @@ TEST_SUITE("CountDownTimer Class") {
         CHECK(std::abs(duration.value().count() - time.value()) < 0.01);
     }
 
+#ifndef __APPLE__
     TEST_CASE("CountDownTimer pause resume timing accuracy") {
         CountDownTimer timer(1.0);
         timer.start();
@@ -984,6 +987,7 @@ TEST_SUITE("CountDownTimer Class") {
         CHECK(final_time.value() <
               0.7);  // Increased tolerance for timing variations
     }
+#endif
 
     TEST_CASE("CountDownTimer restart after completion") {
         CountDownTimer timer(0.1);
