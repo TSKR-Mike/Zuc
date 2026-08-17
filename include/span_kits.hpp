@@ -3,8 +3,9 @@
  * @brief Safe span utilities and operations for C++20
  * @date 2026-07-30
  * @copyright Copyright (c) 2026
- * @note Provides bounds-checked span operations, safe conversions, and span concatenation
- *       All operations are designed to prevent out-of-bounds access and provide clear error handling
+ * @note Provides bounds-checked span operations, safe conversions, and span
+ * concatenation All operations are designed to prevent out-of-bounds access and
+ * provide clear error handling
  */
 
 #pragma once
@@ -79,7 +80,7 @@ inline std::optional<std::span<T>> sub_span_safe(
  * std::array<int, 3> arr = {1, 2, 3};
  * auto vec = convert_span_to_vector(std::span(arr));
  * // vec is now {1, 2, 3}
- * 
+ *
  * std::vector<double> doubles = {1.5, 2.5, 3.5};
  * auto vec2 = convert_span_to_vector(doubles);
  * // vec2 is now {1.5, 2.5, 3.5}
@@ -332,6 +333,7 @@ class ConcatSpan {
                 offset += span.size();
             }
             assert(false && "unreachable");
+            return parent_->all_data_[0][0];
         }
 
        private:
@@ -482,6 +484,7 @@ class ConcatSpan {
                 offset += span.size();
             }
             assert(false && "unreachable");
+            return parent_->all_data_[0][0];
         }
 
        protected:
@@ -670,8 +673,10 @@ class ChunkSpan {
                 return parent_->data_.subspan(curr_chunk_offset_ * chunk_size,
                                               chunk_size);
             } else {
-                size_t remaining = total_size_ - curr_chunk_offset_ * chunk_size;
-                return parent_->data_.subspan(curr_chunk_offset_ * chunk_size, remaining);
+                size_t remaining =
+                    total_size_ - curr_chunk_offset_ * chunk_size;
+                return parent_->data_.subspan(curr_chunk_offset_ * chunk_size,
+                                              remaining);
             }
         }
 
@@ -823,8 +828,10 @@ class ChunkSpan {
                 return parent_->data_.subspan(curr_chunk_offset_ * chunk_size,
                                               chunk_size);
             } else {
-                size_t remaining = total_size_ - curr_chunk_offset_ * chunk_size;
-                return parent_->data_.subspan(curr_chunk_offset_ * chunk_size, remaining);
+                size_t remaining =
+                    total_size_ - curr_chunk_offset_ * chunk_size;
+                return parent_->data_.subspan(curr_chunk_offset_ * chunk_size,
+                                              remaining);
             }
         }
 
@@ -1001,7 +1008,8 @@ class ChunkSpan {
      */
     ElemType& element_at(size_t index) {
         if (index >= total_size_) {
-            throw std::out_of_range("ChunkSpan::element_at: index out of range");
+            throw std::out_of_range(
+                "ChunkSpan::element_at: index out of range");
         }
         return data_[index];
     }
@@ -1014,7 +1022,8 @@ class ChunkSpan {
      */
     const ElemType& element_at(size_t index) const {
         if (index >= total_size_) {
-            throw std::out_of_range("ChunkSpan::element_at: index out of range");
+            throw std::out_of_range(
+                "ChunkSpan::element_at: index out of range");
         }
         return data_[index];
     }
@@ -1027,7 +1036,8 @@ class ChunkSpan {
      */
     std::span<ElemType> chunk_at(size_t chunk_index) {
         if (chunk_index >= chunks_num_) {
-            throw std::out_of_range("ChunkSpan::chunk_at: chunk index out of range");
+            throw std::out_of_range(
+                "ChunkSpan::chunk_at: chunk index out of range");
         }
         if (chunk_index < chunks_num_ - 1) {
             return data_.subspan(chunk_index * chunk_size, chunk_size);
@@ -1045,7 +1055,8 @@ class ChunkSpan {
      */
     const std::span<ElemType> chunk_at(size_t chunk_index) const {
         if (chunk_index >= chunks_num_) {
-            throw std::out_of_range("ChunkSpan::chunk_at: chunk index out of range");
+            throw std::out_of_range(
+                "ChunkSpan::chunk_at: chunk index out of range");
         }
         if (chunk_index < chunks_num_ - 1) {
             return data_.subspan(chunk_index * chunk_size, chunk_size);

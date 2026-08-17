@@ -354,35 +354,40 @@ inline void sleep(double secs) {
 class DateTime {
    public:
     using Duration = std::chrono::microseconds;
-    using TimePoint = std::chrono::local_time<Duration>;
+    using TimePoint = std::chrono::system_clock::time_point;
     // Define a error class
     class InvalidDateError : public std::runtime_error {
        public:
         using std::runtime_error::runtime_error;
     };
-    // Factory methods
-    static DateTime now() {
-        auto sys_t_now = system_clock::now();
+
+   private:
+    // Helper function to convert system time to local time
+    std::chrono::local_time<std::chrono::microseconds> to_local() const {
 #ifndef ZUC_DROP_TIMEZONE
-        auto local_tp = std::chrono::current_zone()->to_local(sys_t_now);
-        return DateTime(std::chrono::time_point_cast<Duration>(local_tp));
+        auto zone = std::chrono::current_zone();
+        auto local_tp = zone->to_local(tp_);
+        return std::chrono::time_point_cast<std::chrono::microseconds>(
+            local_tp);
 #else
-        // Fallback to UTC when timezone support is not available
-        return DateTime(std::chrono::time_point_cast<Duration>(sys_t_now));
+        // Treat system time as local time (i.e., UTC) on platforms without
+        // timezone support
+        auto sys_duration = tp_.time_since_epoch();
+        auto local_duration =
+            std::chrono::duration_cast<std::chrono::microseconds>(sys_duration);
+        return std::chrono::local_time<std::chrono::microseconds>(
+            local_duration);
 #endif
     }
+
+   public:
+    // Factory methods
+    static DateTime now() { return DateTime(system_clock::now()); }
     static DateTime from_timestamp(double seconds) {
         using namespace std::chrono;
         sys_time<Duration> sys_tp = sys_time<Duration>{
             duration_cast<Duration>(duration<double>(seconds))};
-#ifndef ZUC_DROP_TIMEZONE
-        // Convert to local time
-        auto local_tp = current_zone()->to_local(sys_tp);
-        return DateTime(local_tp);
-#else
-        // Fallback to UTC when timezone support is not available
         return DateTime(sys_tp);
-#endif
     }
 
     static DateTime from_ymd(int year_v, int month_v, int day_v, int hour_v = 0,
@@ -411,59 +416,71 @@ class DateTime {
         // Calculate hours, minutes, seconds, microseconds
         auto time_of_day = hours{hour_v} + minutes{minute_v} +
                            seconds{second_v} + microseconds{microsecond_v};
-        auto local_tp = local_time<microseconds>{curr_days} + time_of_day;
+        auto local_tp =
+            local_time<std::chrono::microseconds>{curr_days} + time_of_day;
 
-        return DateTime(local_tp);
+#ifndef ZUC_DROP_TIMEZONE
+        // Convert local time to system time on platforms with timezone support
+        auto zone = std::chrono::current_zone();
+        auto sys_tp = zone->to_sys(local_tp);
+        return DateTime(std::chrono::system_clock::time_point{
+            std::chrono::duration_cast<std::chrono::system_clock::duration>(
+                sys_tp.time_since_epoch())});
+#else
+        // Treat local time as system time (UTC) on platforms without timezone
+        // support
+        return DateTime(std::chrono::system_clock::time_point{
+            std::chrono::duration_cast<std::chrono::system_clock::duration>(
+                local_tp.time_since_epoch())});
+#endif
     }
     int get_year() const {
-        auto curr_days = std::chrono::floor<days>(tp_);
+        auto local_tp = to_local();
+        auto curr_days = std::chrono::floor<days>(local_tp);
         year_month_day ymd{curr_days};
         return static_cast<int>(ymd.year());
     }
     int get_month() const {
-        auto curr_days = std::chrono::floor<days>(tp_);
+        auto local_tp = to_local();
+        auto curr_days = std::chrono::floor<days>(local_tp);
         year_month_day ymd{curr_days};
         return static_cast<int>(static_cast<unsigned int>(ymd.month()));
     }
     int get_day() const {
-        auto curr_days = std::chrono::floor<days>(tp_);
+        auto local_tp = to_local();
+        auto curr_days = std::chrono::floor<days>(local_tp);
         year_month_day ymd{curr_days};
         return static_cast<int>(static_cast<unsigned int>(ymd.day()));
     }
     int get_hour() const {
-        auto curr_days = std::chrono::floor<days>(tp_);
-        hh_mm_ss hms{tp_ - curr_days};
+        auto local_tp = to_local();
+        auto curr_days = std::chrono::floor<days>(local_tp);
+        hh_mm_ss hms{local_tp - curr_days};
         return hms.hours().count();
     }
     int get_minute() const {
-        auto curr_days = std::chrono::floor<days>(tp_);
-        hh_mm_ss hms{tp_ - curr_days};
+        auto local_tp = to_local();
+        auto curr_days = std::chrono::floor<days>(local_tp);
+        hh_mm_ss hms{local_tp - curr_days};
         return hms.minutes().count();
     }
     int get_second() const {
-        auto curr_days = std::chrono::floor<days>(tp_);
-        hh_mm_ss hms{tp_ - curr_days};
+        auto local_tp = to_local();
+        auto curr_days = std::chrono::floor<days>(local_tp);
+        hh_mm_ss hms{local_tp - curr_days};
         return hms.seconds().count();
     }
     int get_microsecond() const {
-        auto curr_days = std::chrono::floor<days>(tp_);
-        hh_mm_ss hms{tp_ - curr_days};
+        auto local_tp = to_local();
+        auto curr_days = std::chrono::floor<days>(local_tp);
+        hh_mm_ss hms{local_tp - curr_days};
         return static_cast<int>(hms.subseconds().count());
     }
     double time_stamp() const {
         using namespace std::chrono;
-#ifndef ZUC_DROP_TIMEZONE
-        // Convert local_time to system_clock to get UTC seconds since epoch
-        auto sys_tp = current_zone()->to_sys(tp_);
-        auto total_duration =
-            duration_cast<duration<double>>(sys_tp.time_since_epoch());
-        return total_duration.count();
-#else
-        // When using UTC directly, just get the duration since epoch
         auto total_duration =
             duration_cast<duration<double>>(tp_.time_since_epoch());
         return total_duration.count();
-#endif
     }
     DateTime& operator+=(const Duration& delta) {
         tp_ += delta;
@@ -481,7 +498,9 @@ class DateTime {
         return DateTime(tp_ - delta);
     }
 
-    Duration operator-(const DateTime& other) const { return tp_ - other.tp_; }
+    Duration operator-(const DateTime& other) const {
+        return std::chrono::duration_cast<Duration>(tp_ - other.tp_);
+    }
     DateTime offset_days(int days) const {
         return *this + std::chrono::days{days};
     }
