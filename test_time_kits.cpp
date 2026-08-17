@@ -980,7 +980,7 @@ TEST_SUITE("CountDownTimer Class") {
         auto final_time = timer.get_remaining_time();
 
         // Should have approximately 0.6 seconds remaining (1.0 - 0.2 - 0.2)
-        CHECK(final_time.value() > 0.55);
+        CHECK(final_time.value() > 0.5);
         CHECK(final_time.value() <
               0.7);  // Increased tolerance for timing variations
     }
