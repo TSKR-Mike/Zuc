@@ -20,7 +20,6 @@
 #include "common_concepts.hpp"
 #include "string_kits.hpp"
 
-
 #define _CRT_SECURE_NO_WARNINGS  // To ignore fopen warnings on windows
 
 namespace zuc {
@@ -258,6 +257,44 @@ class FileMgr {
 
         file_.clear();
         return contents;
+    }
+
+    /**
+     * @brief Read entire file content as a single string
+     * @return String containing the complete file content
+     * @throws FileException if file is not open or reading fails
+     * @note Resets read pointer to beginning before reading. Handles both Unix
+     * (\n) and Windows (\r\n) line endings by removing trailing \r
+     * @note This is more efficient than read_all() when you need the complete
+     * file content without line-by-line processing
+     * @example
+     * FileMgr file("data.txt", std::ios::in);
+     * std::string content = file.read_as_string();
+     */
+    std::string read_as_string() {
+        if (!is_valid()) {
+            throw FileException("File is not opened");
+        }
+        reset_read_pointer_to_front();
+
+        std::string content;
+        std::string line;
+        bool first_line = true;
+
+        while (std::getline(file_, line)) {
+            if (!first_line) {
+                content += "\n";
+            }
+            first_line = false;
+            content += line;
+        }
+
+        if (file_.bad()) {
+            throw FileException("Failed to read the file.");
+        }
+
+        file_.clear();
+        return content;
     }
 
     /**
@@ -528,6 +565,12 @@ inline void write_a_line_to_console(const std::string& line) {
 }
 
 /**
+ * @brief Write a newline to console (similar to Python's print())
+ * @note Equivalent to write_a_line_to_console("") or Python's print()
+ */
+inline void write_a_line_to_console() { write_string_to_console("\n"); }
+
+/**
  * @brief Read a line from console with optional prompt
  * @tparam Args Variadic template for prompt arguments
  * @param prompt_fmt_str Format string for the prompt
@@ -536,6 +579,22 @@ inline void write_a_line_to_console(const std::string& line) {
  * @note Displays a formatted prompt and reads user input from stdin. Handles
  * Windows line endings (\r\n) by removing the trailing \r
  */
+inline std::string read_a_line_from_console() {
+    std::cin.clear();
+    std::string line;
+    if (!std::getline(std::cin, line)) {
+        if (std::cin.eof()) {
+            std::cin.clear();
+        } else {
+            throw ReadLineException("Failed to read a line from console");
+        }
+    }
+    if (!line.empty() && line.back() == '\r') {
+        line.pop_back();
+    }
+    return line;
+}
+
 template <typename... Args>
 inline std::string read_a_line_from_console(
     std::format_string<Args...> prompt_fmt_str, Args&&... prompt_args) {
@@ -570,9 +629,11 @@ inline std::string read_a_line_from_console(
  * @note Provides a non-throwing alternative to FileMgr constructor. Errors are
  * printed to console instead of being thrown
  */
-inline std::optional<FileMgr> open_file(const std::string& path) {
+inline std::optional<FileMgr> open_file(
+    const std::string& path,
+    std::ios::openmode mode = std::ios::in | std::ios::out) {
     try {
-        return FileMgr(path);
+        return FileMgr(path, mode);
     } catch (const FileException& e) {
         write_string_to_console("{}", e.what());
         return std::nullopt;

@@ -201,16 +201,39 @@ class Stopwatch {
     bool paused_ = false;
 };
 
+#ifndef ZUC_DROP_TIMEZONE
 inline std::string get_today_str() {
+    // Get current time zone's today string
     using namespace std::chrono;
-    auto now = system_clock::now();
-    return std::format("{:%Y-%m-%d}", now);
+    auto zone = std::chrono::current_zone();
+    auto local_tp = zone->to_local(system_clock::now());
+    return std::format("{:%Y-%m-%d}", local_tp);
 }
+#elif ZUC_DROP_TIMEZONE
+inline std::string get_today_str() {
+    // Get current utc's today string
+    using namespace std::chrono;
+    auto utc_tp = system_clock::now();
+    return std::format("{:%Y-%m-%d}", utc_tp);
+}
+#endif
 
+#ifndef ZUC_DROP_TIMEZONE
 inline std::string get_today_time_detailed_str() {
-    auto now = system_clock::now();
-    return std::format("{:%Y-%m-%d %H:%M:%S}", now);
+    // Get current time zone's today detailed time string
+    using namespace std::chrono;
+    auto zone = std::chrono::current_zone();
+    auto local_tp = zone->to_local(system_clock::now());
+    return std::format("{:%Y-%m-%d %H:%M:%S}", local_tp);
 }
+#elif ZUC_DROP_TIMEZONE
+inline std::string get_today_time_detailed_str() {
+    // Get current utc's today detailed time string
+    using namespace std::chrono;
+    auto utc_tp = system_clock::now();
+    return std::format("{:%Y-%m-%d %H:%M:%S}", utc_tp);
+}
+#endif
 
 enum class TimePrecision {
     minute_precs,
@@ -350,7 +373,7 @@ inline void sleep(double secs) {
     std::this_thread::sleep_for(duration<double>(secs));
 }
 
-// To support LLVM19(chrono not fully implemented)
+// To support platform where chrono not fully implemented
 class DateTime {
    public:
     using Duration = std::chrono::microseconds;
@@ -371,7 +394,7 @@ class DateTime {
             local_tp);
 #else
         // Treat system time as local time (i.e., UTC) on platforms without
-        // timezone support
+        // time zone support
         auto sys_duration = tp_.time_since_epoch();
         auto local_duration =
             std::chrono::duration_cast<std::chrono::microseconds>(sys_duration);

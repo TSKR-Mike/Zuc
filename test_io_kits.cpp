@@ -1,15 +1,14 @@
 // tests/test_io_kits.cpp
 
+#include <array>
 #include <filesystem>
 #include <fstream>
-#include <array>
 #include <string>
 #include <thread>
 #include <vector>
 
 #include "doctest.h"
 #include "include/io_kits.hpp"
-
 
 using namespace zuc;
 
@@ -42,6 +41,84 @@ TEST_SUITE("File Operations") {
             CHECK(lines[1] == "Line 2");
             CHECK(lines[2] == "Line 3");
             read_file.close();
+        }
+
+        // Cleanup
+        std::filesystem::remove(test_file);
+    }
+
+    TEST_CASE("FileMgr read_as_string") {
+        const std::string test_file = "test_read_as_string.txt";
+
+        // Write test content using binary mode to avoid Windows line ending conversion
+        {
+            FileMgr write_file(test_file, std::ios::out | std::ios::binary);
+            REQUIRE(write_file.is_valid());
+            write_file.write_a_string("Line 1\n");
+            write_file.write_a_string("Line 2\n");
+            write_file.write_a_string("Line 3");
+        }
+
+        // Read as string test
+        {
+            FileMgr read_file(test_file, std::ios::in);
+            REQUIRE(read_file.is_valid());
+            auto content = read_file.read_as_string();
+
+            CHECK(content == "Line 1\nLine 2\nLine 3");
+        }
+
+        // Cleanup
+        std::filesystem::remove(test_file);
+    }
+
+    TEST_CASE("FileMgr read_as_string empty file") {
+        const std::string test_file = "test_empty_read_as_string.txt";
+
+        // Create empty file
+        {
+            FileMgr file(test_file, std::ios::out);
+        }
+
+        // Read empty file as string
+        {
+            FileMgr file(test_file, std::ios::in);
+            auto content = file.read_as_string();
+            CHECK(content.empty());
+        }
+
+        // Cleanup
+        std::filesystem::remove(test_file);
+    }
+
+    TEST_CASE("FileMgr read_as_string vs read_all") {
+        const std::string test_file = "test_read_comparison.txt";
+
+        // Write test content
+        {
+            FileMgr write_file(test_file, std::ios::out);
+            write_file.write_a_string("Line 1\n");
+            write_file.write_a_string("Line 2\n");
+            write_file.write_a_string("Line 3");
+        }
+
+        // Compare read_as_string and read_all
+        {
+            FileMgr read_file(test_file, std::ios::in);
+
+            auto string_content = read_file.read_as_string();
+            auto vector_content = read_file.read_all();
+
+            // Reconstruct string from vector
+            std::string reconstructed;
+            for (size_t i = 0; i < vector_content.size(); ++i) {
+                reconstructed += vector_content[i];
+                if (i < vector_content.size() - 1) {
+                    reconstructed += "\n";
+                }
+            }
+
+            CHECK(string_content == reconstructed);
         }
 
         // Cleanup
@@ -262,7 +339,8 @@ TEST_SUITE("File Operations") {
         {
             FileMgr file(test_file, std::ios::out);
             for (int i = 0; i < line_count; ++i) {
-                file.write_a_string("This is line number {} with some content\n", i);
+                file.write_a_string(
+                    "This is line number {} with some content\n", i);
             }
         }
 
@@ -715,7 +793,6 @@ TEST_SUITE("Error Handling") {
         CHECK(status == ReadLineStatus::Failed);
         CHECK(!line.has_value());
     }
-
 }
 
 /**
@@ -838,10 +915,10 @@ TEST_SUITE("Console Operations Extended") {
     }
 
     TEST_CASE("Console write with various types") {
-        CHECK_NOTHROW(write_string_to_console("Int: {}, Float: {}, Bool: {}, Char: {}", 
-                                              42, 3.14f, true, 'A'));
-        CHECK_NOTHROW(write_a_line_to_console("Mixed: {}, {}, {}, {}", 
-                                              42, 3.14, true, "hello"));
+        CHECK_NOTHROW(write_string_to_console(
+            "Int: {}, Float: {}, Bool: {}, Char: {}", 42, 3.14f, true, 'A'));
+        CHECK_NOTHROW(write_a_line_to_console("Mixed: {}, {}, {}, {}", 42, 3.14,
+                                              true, "hello"));
     }
 }
 
@@ -912,13 +989,13 @@ TEST_SUITE("FileMgr WriteAll Extended") {
 
         {
             FileMgr file(test_file, std::ios::out);
-            
+
             std::vector<std::string> vec = {"Vec 1", "Vec 2"};
             file.write_all(vec);
-            
+
             std::array<std::string, 2> arr = {"Arr 1", "Arr 2"};
             file.write_all(arr);
-            
+
             const char* c_arr[] = {"C 1", "C 2"};
             file.write_all(c_arr);
         }

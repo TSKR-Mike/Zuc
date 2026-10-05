@@ -8,7 +8,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # -----------------------------------------------------------------------------
 # Main test executable
 # -----------------------------------------------------------------------------
-add_executable(zuc_test 
+add_executable(zuc_test
     test.cpp
     test_container_kits.cpp
     test_span_kits.cpp
@@ -18,6 +18,7 @@ add_executable(zuc_test
     test_random_kits.cpp
     test_common_concepts.cpp
     test_numerics_kits.cpp
+    test_maths_kits.cpp
 )
 enable_testing()
 target_compile_options(zuc_test PRIVATE

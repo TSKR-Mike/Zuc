@@ -13,6 +13,7 @@ For functions equipped with range check(using `assert`), building under `release
   - [Container Utilities](#container-utilities-container_kitshpp)
   - [Common Concepts](#common-concepts-common_conceptshpp)
   - [String Conversion](#string-conversion-string_convertshpp)
+  - [Maths Utilities](#maths-utilities-maths_kitshpp)
 - [API Reference](#api-reference)
 - [Examples](#examples)
 - [Requirements](#requirements)
@@ -931,6 +932,112 @@ bool is_num2 = is_numeric("3.14");   // true
 bool is_num3 = is_numeric("hello");  // false
 ```
 
+### Maths Utilities (`maths_kits.hpp`)
+
+Maths utilities provide 2D/3D/4D vector types, point types, rectangle operations, and matrix types for linear algebra.
+
+**Key Features:**
+- Vector2D, Vector3D, Vector4D with full arithmetic and normalization
+- Dot product and cross product operations
+- Point2D, Point3D geometric primitives
+- Rect2D with containment, intersection, and merge operations
+- Matrix3 and Matrix4 with multiplication and vector transformation
+
+#### Vector2D
+
+```cpp
+Vector2D v{3.0, 4.0};
+
+// Arithmetic
+auto doubled = v * 2.0;       // {6, 8}
+auto halved = v / 2.0;        // {1.5, 2}
+auto sum = v + Vector2D{1, 1}; // {4, 5}
+
+// Size and normalization
+double len = v.size();         // 5.0
+v.normalize();                 // {0.6, 0.8}
+auto n = get_normalized(v);    // unit vector copy
+
+// Dot product
+double d = get_dot_product(Vector2D{1, 2}, Vector2D{3, 4}); // 11
+
+// Division by zero returns zero vector
+auto zero = v / 0;             // {0, 0}
+```
+
+#### Vector3D
+
+```cpp
+Vector3D v{1.0, 2.0, 3.0};
+
+// Same arithmetic as Vector2D, plus:
+auto cross = get_cross_product(Vector3D{1, 0, 0}, Vector3D{0, 1, 0}); // {0, 0, 1}
+double d = get_dot_product(Vector3D{1, 2, 3}, Vector3D{4, 5, 6});     // 32
+auto n = get_normalized(v);  // unit vector copy
+```
+
+#### Vector4D
+
+```cpp
+Vector4D v{1.0, 2.0, 3.0, 4.0};
+
+// Same arithmetic as Vector2D/Vector3D
+double len = v.size();       // sqrt(30)
+v.normalize();
+auto n = get_normalized(v);  // unit vector copy
+```
+
+#### Point2D / Point3D
+
+```cpp
+Point2D p2{3.0, 4.0};
+Point3D p3{1.0, 2.0, 3.0};
+```
+
+#### Rect2D
+
+```cpp
+Rect2D r{0, 0, 10, 10};  // x, y, width, height
+
+// Accessors
+double left = r.get_left();     // 0
+double top = r.get_top();       // 0
+double right = r.get_right();   // 10
+double bottom = r.get_bottom(); // 10
+double area = r.get_area();     // 100
+
+// Containment
+bool inside = r.contains_point({5, 5});  // true
+
+// Intersection
+Rect2D other{5, 5, 10, 10};
+bool overlap = intersect(r, other);  // true
+
+// Merge (bounding rectangle)
+Rect2D merged = merge(r, other);
+```
+
+#### Matrix3 / Matrix4
+
+```cpp
+// Row-major 3x3 matrix
+Matrix3 m{};
+m.set(0, 0, 1.0); m.set(0, 1, 2.0); m.set(0, 2, 3.0);
+m.set(1, 0, 4.0); m.set(1, 1, 5.0); m.set(1, 2, 6.0);
+m.set(2, 0, 7.0); m.set(2, 1, 8.0); m.set(2, 2, 9.0);
+
+double val = m.get(1, 2);              // 6.0
+auto row = m.get_row(0);               // {1, 2, 3}
+auto col = m.get_col(0);               // {1, 4, 7}
+Matrix3 product = m * m;               // matrix multiplication
+Vector3D result = m * Vector3D{1, 0, 0}; // matrix-vector multiplication
+
+// Row-major 4x4 matrix (same API)
+Matrix4 m4{};
+// ... set/get/get_row/get_col/multiply ...
+Vector4D result4 = m4 * Vector4D{1, 2, 3, 4};
+```
+
 ## API Reference
 
 ### String Functions
@@ -969,6 +1076,7 @@ bool is_num3 = is_numeric("hello");  // false
 | `FileMgr::write_a_line(content)`     | Write content with automatic newline           |
 | `FileMgr::write_a_line(fmt, ...)`    | Write formatted content with automatic newline |
 | `FileMgr::write_all(span)`           | Write multiple items, one per line             |
+| `FileMgr::read_as_string()`          | Read entire file content as a single string    |
 | `write_string_to_console(fmt, ...)`  | Formatted console output                       |
 | `write_a_line_to_console(fmt, ...)`  | Formatted console output with newline          |
 | `read_a_line_from_console(fmt, ...)` | Interactive console input                      |
@@ -1048,6 +1156,24 @@ bool is_num3 = is_numeric("hello");  // false
 | `convert_to_hex(data)`                   | Convert to hexadecimal string    | `std::string`           |
 | `try_convert_string_to_numerics<T>(str)` | Safe string to number conversion | `Optional<T>`           |
 | `is_numeric(str)`                        | Check if string is numeric       | `bool`                  |
+
+### Maths Functions and Types (`maths_kits.hpp`)
+
+| Type/Function               | Description                                | Returns    |
+| --------------------------- | ------------------------------------------ | ---------- |
+| `Vector2D`                  | 2D vector with arithmetic & normalization  | Struct     |
+| `Vector3D`                  | 3D vector with arithmetic & normalization  | Struct     |
+| `Vector4D`                  | 4D vector with arithmetic & normalization  | Struct     |
+| `Point2D`                   | 2D point primitive                         | Struct     |
+| `Point3D`                   | 3D point primitive                         | Struct     |
+| `Rect2D`                    | 2D rectangle with containment/intersection | Struct     |
+| `Matrix3`                   | 3x3 row-major matrix                       | Struct     |
+| `Matrix4`                   | 4x4 row-major matrix                       | Struct     |
+| `get_dot_product(v1, v2)`   | Dot product of 2D/3D vectors               | `double`   |
+| `get_cross_product(v1, v2)` | Cross product of 3D vectors                | `Vector3D` |
+| `get_normalized(v)`         | Return normalized unit vector              | `VectorND` |
+| `intersect(r1, r2)`         | Check if two Rect2Ds intersect             | `bool`     |
+| `merge(r1, r2)`             | Bounding rectangle of two Rect2Ds          | `Rect2D`   |
 
 ## Examples
 
