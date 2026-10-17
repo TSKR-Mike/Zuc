@@ -132,7 +132,7 @@ concept RangeLike = requires(T& t) {
 
 template <typename T, typename ValueType>
 concept RangeLikeElemTypeSpecified = requires(T& t) {
-    RangeLike<T>;
+    requires RangeLike<T>;
     requires std::same_as<
         typename std::iterator_traits<decltype(std::begin(t))>::value_type,
         ValueType>;
@@ -140,7 +140,7 @@ concept RangeLikeElemTypeSpecified = requires(T& t) {
 
 template <typename T, typename ValueType>
 concept RangeLikeElemTypeConvertibleTo = requires(T& t) {
-    RangeLike<T>;
+    requires RangeLike<T>;
     requires std::convertible_to<
         typename std::iterator_traits<decltype(std::begin(t))>::value_type,
         ValueType>;

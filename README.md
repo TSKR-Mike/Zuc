@@ -1,5 +1,6 @@
 # zuc (Zero-overhead Utility Collection)
-> 🏖️ **Active Development Window**: Primarily maintained during **Winter & Summer Breaks**. 
+>
+> 🏖️ **Active Development Window**: Primarily maintained during **Winter & Summer Breaks**.
 > Issues and PRs are warmly welcomed but will be reviewed in batches during these periods.
 
 ## ✨ **Modern C++20 Utilities Library**
@@ -7,6 +8,7 @@
 zuc is a modern, header-only C++ library that provides fast, intuitive utilities for everyday programming tasks. Built with C++20 standards, it combines performance with convenience - offering zero-allocation views, safe I/O operations, and a growing collection of tools to make C++ development more enjoyable.
 
 ## 📑 Table of Contents
+
 - [Why I Built Zuc](#-why-i-built-zuc-and-why-you-might-need-it)
 - [Key Features](#-key-features)
 - [What's Inside](#-whats-inside)
@@ -17,10 +19,12 @@ zuc is a modern, header-only C++ library that provides fast, intuitive utilities
 - [Future Plans](#-future-plans)
 
 ## 🔥 Why I Built Zuc (and Why You Might Need It)
+
 While Abseil and Folly are great, they require heavy dependencies and non-header-only builds. Zuc is designed for developers who want a lightweight, header-only alternative with a focus on modern C++20 features.
 Here are 5 real-world C++ pain points I encountered repeatedly, and how Zuc eliminates them:
 
 ### 1. 🧵 String Splitting Requires a Loop and Copy Every Time
+
 ```cpp
 // ❌ Standard library: manual loop + index management + heap copies
 std::string s = "hello,world,cpp";
@@ -35,7 +39,9 @@ parts.emplace_back(s.substr(start));
 // ✅ Zuc: one line, zero copy (returns string_view views)
 auto parts = zuc::split(s, ',');
 ```
+
 ### 2. 💥 Integer Overflow is Undefined Behavior
+
 ```cpp
 // ❌ Standard library: no protection, UB on overflow
 int32_t a = 2'000'000'000, b = 2'000'000'000;
@@ -47,6 +53,7 @@ if (result) use(*result); else handle_overflow();
 ```
 
 ### 3. 🧹 Manual Resource Cleanup is Error-Prone
+
 ```cpp
 // ❌ Standard library: manual unlock on every return path
 void process() {
@@ -64,7 +71,9 @@ void process() {
     // ... even if early return, mutex is guaranteed to unlock
 }
 ```
+
 ### 4. 🐌 Concatenating Multiple Vectors Copies Everything
+
 ```cpp
 // ❌ Standard library: multiple allocations and copies
 std::vector<int> a{1,2}, b{3,4}, c{5,6};
@@ -79,6 +88,7 @@ for (int x : all) { /* ... */ }
 ```
 
 ### 5. 📦 pop_back() Returns Nothing
+
 ```cpp
 // ❌ Standard library: two lines, no empty-container semantics
 if (!v.empty()) { auto val = v.back(); v.pop_back(); }
@@ -89,14 +99,15 @@ if (val) use(*val);
 ```
 
 ### 🚀 No Overhead, No Surprises
+
 - **Header-only** - Just #include "zuc/string_kits.hpp", no linking hassle. No ABI worries.
 
 - **C++20 Core**: Uses Concepts for readable error messages, constexpr where possible.
 
 Tested on: GCC, Clang, MSVC (CI passes).
 
-
 ## 🎯 Key Features
+
 - **Zero-Overhead Philosophy** - Designed for maximum performance with minimal runtime cost
 - **Zero-Allocation Views** - Non-allocating string operations using `std::string_view`
 - **Modern C++20** - Leverages latest C++ features including concepts, ranges, and formatting
@@ -110,6 +121,7 @@ Tested on: GCC, Clang, MSVC (CI passes).
 ## 📦 What's Inside
 
 ### String Utilities (`string_kits.hpp`)
+
 - **String Slicing** - `slice()`, `prefix()`, `suffix()`, `remove_prefix()`, `remove_suffix()`
 - **Trimming** - `trim_left()`, `trim_right()`, `trim()` with view variants
 - **Content Checks** - `contains()`, `contains_any()`, `contains_all()`
@@ -118,6 +130,7 @@ Tested on: GCC, Clang, MSVC (CI passes).
 - **Pattern Matching** - `match_any()` for checking against multiple patterns
 
 ### Container Utilities (`container_kits.hpp`)
+
 - **Content Checking** - `contains()`, `contains_any()`, `contains_if()` for element searching
 - **Value Extraction** - `pop_back_value()`, `pop_front_value()` for safe element removal
 - **Map Operations** - `get_or_insert()`, `get_or_insert_default()`, `get_map_keys()`, `get_map_values()`
@@ -127,6 +140,7 @@ Tested on: GCC, Clang, MSVC (CI passes).
 - **Container Transformation** - `transform_all_to_vector()` for element mapping
 
 ### Span Utilities (`span_kits.hpp`)
+
 - **Safe Span Operations** - `sub_span_safe()` for bounds-checked span slicing with proper error handling
 - **Span Conversion** - `convert_span_to_vector()` for efficient span-to-vector conversion
 - **Content Search** - `contains()`, `contains_any()` for element checking in spans
@@ -136,6 +150,7 @@ Tested on: GCC, Clang, MSVC (CI passes).
 - **Iterator Support** - Complete iterator interface for range-based for loops
 
 ### I/O Operations (`io_kits.hpp`)
+
 - **File Handling** - `FileMgr` class for safe file operations with RAII
 - **File Writing** - `write_a_string()`, `write_a_line()`, `write_all()` for flexible file output
 - **Console I/O** - Formatted console output and input functions
@@ -144,6 +159,7 @@ Tested on: GCC, Clang, MSVC (CI passes).
 - **Convenient API** - Simple, intuitive functions that make I/O operations effortless
 
 ### Time Utilities (`time_kits.hpp`)
+
 - **Timer & Stopwatch** - Easy-to-use timing utilities for performance measurement
 - **DateTime Class** - Convenient date/time manipulation with arithmetic operations
 - **Function Benchmarking** - Simple function timing with detailed statistics
@@ -151,6 +167,7 @@ Tested on: GCC, Clang, MSVC (CI passes).
 - **Sleep Functions** - Convenient thread sleeping with duration support
 
 ### Random Generation (`random_kits.hpp`)
+
 - **Basic Random Numbers** - `random_int()`, `random_double()`, `random_long_long()`
 - **Sized Random Numbers** - `random_int32()`, `random_int64()` for specific bit widths
 - **Boolean Random Generation** - `random_true()`, `random_false()` for probability-based boolean generation
@@ -159,32 +176,46 @@ Tested on: GCC, Clang, MSVC (CI passes).
 - **Thread Safety** - Modern C++ random engine with proper seeding
 
 ### Numerics Utilities (`numerics_kits.hpp`)
+
 - **Compile-time Type Selection** - `select_by_max_unsigned_t`, `select_by_range_t`, `select_by_value_t`
 - **Overflow-Checked Arithmetic** - `checked_add()`, `checked_sub()`, `checked_mul()`
 - **Platform Optimizations** - Uses compiler intrinsics for optimal performance
 - **Safe Numeric Operations** - Returns `std::optional` for error handling
 
 ### RAII Utilities (`raii_kits.hpp`)
+
 - **Scope Guards** - `generate_scope_guard()` for automatic cleanup
 - **Success/Failure Guards** - Conditional execution based on exception state
 - **Resource Management** - Automatic cleanup with RAII patterns
 - **Dismissable Guards** - Control when cleanup actions execute
 
 ### String Conversion (`string_converts.hpp`)
+
 - **Range to String** - `convert_range_to_string()` for containers
 - **Binary Data Handling** - `convert_to_bytes()` for object serialization
 - **Hexadecimal Conversion** - `convert_to_hex()` for binary representation
 - **Numeric Parsing** - `try_convert_string_to_numerics()` for safe number conversion
 
 ### Common Concepts (`common_concepts.hpp`)
+
 - **Type Constraints** - `Stringable`, `OneOf`, `UnaryPred`, `BinaryPred`
 - **Callable Concepts** - `InvocableReturns` for function type requirements
 - **Range Concepts** - `RangeLike`, `RangeLikeElemTypeSpecified` for container constraints
 - **Compile-time Safety** - Type-safe template programming with concepts
 
+### DocxWriter (`docx_writer.hpp`)
+
+- **DOCX Generation** - Create `.docx` files with no external dependencies
+- **Store-only ZIP** - Built-in ZIP writer (compression method = 0)
+- **Configurable Font** - `set_font()`, `set_font_size()` for default document font
+- **Table Support** - `add_table()` for bordered tables with auto column width
+- **XML Escaping** - Automatic escaping of `&`, `<`, `>` in text content
+- **Miniz Backend** - Optional `ZUC_USE_MINIZ` to switch to miniz compression
+
 ## 🛠️ Quick Start
 
 ### Installation
+
 1. Clone the repository or download the include directory
 2. Copy everything inside the `./include` directory to your code base
 3. Include the desired headers in your project
@@ -192,6 +223,7 @@ Tested on: GCC, Clang, MSVC (CI passes).
 **That's it!** No build configuration needed.
 
 ### Basic Usage
+
 ```cpp
 #include "string_kits.hpp"       // For string operations
 #include "container_kits.hpp"    // For container operations
@@ -207,6 +239,7 @@ auto guard = generate_scope_guard([&] { cleanup(); }); // RAII resource manageme
 ```
 
 ### Building Tests
+
 ```bash
 mkdir build && cd build
 cmake ..
@@ -233,9 +266,11 @@ Zuc is designed with a zero‑overhead abstraction philosophy. The following ben
 | **Zero-alloc**  | View Operations   | **~100M+ ops/sec** |
 
 ### 📊 Detailed Results
+>
 > Summary: Overall, Zuc can achieve similar performance to abseil/iostream, with a nicer api without costing too much.
 
 ![Performance Benchmarks](performance_benchmarks.png)
+
 #### File I/O Performance (zuc vs iostream)
 
 | Benchmark                              | zuc Time | iostream Time | Speedup   |
@@ -266,16 +301,16 @@ A common concern with RAII wrappers like `zuc::FileMgr` is whether they introduc
 
 The following table shows one representative run on our test machine (Clang 22, `-O3`). The numbers are **illustrative**, not guaranteed; what matters is the **relative gap**, which consistently shows that zuc's I/O layer is as lightweight as the standard library, and sometimes faster where it counts.
 
-| Benchmark                             | zuc Time   | iostream Time | Speedup   |
-| ------------------------------------- | ---------- | ------------- | --------- |
-| Write Small File (100 iters)          | 400 ns     | 380 ns        | 0.95×     |
-| Write Medium File (10 iters)          | 2.01 ms    | 2.40 ms       | 1.19×     |
-| Write Large File (5 iters)            | 16.5 ms    | 17.2 ms       | 1.04×     |
-| Write Lines (100 iters)               | 825 µs     | 775 µs        | 0.94×     |
-| **Write Formatted Lines (100 iters)** | **695 µs** | **1054 µs**(using `stringstream`)   | **1.52×** |
-| Read Small File (100 iters)           | 86.8 µs    | 68.8 µs       | 0.79×     |
-| Read Medium File (10 iters)           | 6.19 ms    | 7.87 ms       | 1.27×     |
-| Read Lines (100 iters)                | 962 µs     | 983 µs        | 1.02×     |
+| Benchmark                             | zuc Time   | iostream Time                     | Speedup   |
+| ------------------------------------- | ---------- | --------------------------------- | --------- |
+| Write Small File (100 iters)          | 400 ns     | 380 ns                            | 0.95×     |
+| Write Medium File (10 iters)          | 2.01 ms    | 2.40 ms                           | 1.19×     |
+| Write Large File (5 iters)            | 16.5 ms    | 17.2 ms                           | 1.04×     |
+| Write Lines (100 iters)               | 825 µs     | 775 µs                            | 0.94×     |
+| **Write Formatted Lines (100 iters)** | **695 µs** | **1054 µs**(using `stringstream`) | **1.52×** |
+| Read Small File (100 iters)           | 86.8 µs    | 68.8 µs                           | 0.79×     |
+| Read Medium File (10 iters)           | 6.19 ms    | 7.87 ms                           | 1.27×     |
+| Read Lines (100 iters)                | 962 µs     | 983 µs                            | 1.02×     |
 
 **Bottom line**: `zuc::FileMgr` gives you safe, exception‑aware file handling **without paying a performance penalty**. The measured differences are within the noise floor of the file system and cache; the only clear win is in formatted output, where zuc's design is genuinely more efficient.
 
@@ -636,6 +671,7 @@ file.write_a_string("Processing complete at: {}\n", get_today_time_detailed_str(
 ## 🧪 Testing
 
 The library includes comprehensive test coverage using the doctest framework:
+
 - **String Operations** - Slicing, trimming, splitting, joining, replacing
 - **File I/O** - Reading, writing, formatted output, error handling
 - **Time Utilities** - Timers, stopwatches, DateTime, benchmarking
@@ -643,12 +679,15 @@ The library includes comprehensive test coverage using the doctest framework:
 - **Random Generation** - Various random number generators
 
 Run tests with:
+
 ```bash
 cmake --build . && ctest
 ```
+
 ## 🤝 Contributing
 
 Contributions are welcome! Please ensure:
+
 - All code follows the existing style and conventions
 - New features include comprehensive tests
 - Documentation is updated for any API changes
@@ -673,16 +712,18 @@ Copyright (c) 2026, Under Apache License 2.0
 See [LICENSE](LICENSE) for details.
 
 ---
-Developed by TSKR-Mike@github.com
+Developed by <TSKR-Mike@github.com>
 
 ## 📋 Compatibility
 
 Tested and verified on:
+
 - **GCC 13+** - Full support including all features
 - **Clang 19+** - Full support except DateTime class (define `ZUC_DROP_CHRONO_TIME_ZONE` to work around, but it passed on my debian13's llvm19.If you download official llvm, the minium version is 22(with full chrono support))
 - **MSVC 2022+** - Full support including all features
 
 ### Platform Support
+
 - **Windows** - Primary development platform
 - **Linux** - Full support
 - **macOS** - Should work (community testing appreciated)
@@ -690,6 +731,7 @@ Tested and verified on:
 ## 📚 API Reference
 
 ### Common Concepts (`common_concepts.hpp`)
+
 - `Stringable<T>` - Types that can be converted to strings
 - `OneOf<T, Types...>` - Type constraint for allowed types
 - `UnaryPred<F, T>` - Unary predicate concept
@@ -699,6 +741,7 @@ Tested and verified on:
 - `RangeLikeElemTypeSpecified<R, T>` - Range of specific element type
 
 ### String Operations (`string_kits.hpp`)
+
 - `slice()`, `prefix()`, `suffix()` - Zero-allocation substring operations
 - `trim()`, `trim_left()`, `trim_right()` - Whitespace removal
 - `split()`, `split_to_string()` - String splitting
@@ -709,6 +752,7 @@ Tested and verified on:
 - `match_any()` - Pattern matching
 
 ### Span Operations (`span_kits.hpp`)
+
 - `sub_span_safe()` - Bounds-checked span slicing
 - `convert_span_to_vector()` - Span to vector conversion
 - `contains()`, `contains_any()` - Element searching
@@ -716,12 +760,14 @@ Tested and verified on:
 - `ConcatSpan<T, N>` - Multiple span concatenation
 
 ### I/O Operations (`io_kits.hpp`)
+
 - `FileMgr` - RAII file management class
 - `write_a_line_to_console()` - Formatted console output
 - `read_a_line_from_console()` - Interactive console input
 - `open_file()` - Safe file opening with error handling
 
 ### Time Operations (`time_kits.hpp`)
+
 - `Timer` - Simple timing utility
 - `Stopwatch` - Pause/resume timing
 - `DateTime` - Date/time manipulation (requires full C++20 chrono)
@@ -730,6 +776,7 @@ Tested and verified on:
 - `format_duration()` - Time formatting
 
 ### Random Operations (`random_kits.hpp`)
+
 - `random_int()`, `random_double()` - Basic random numbers
 - `random_int32()`, `random_int64()` - Sized integer random numbers
 - `uniform_random_*()` - Uniform distribution aliases
@@ -737,6 +784,7 @@ Tested and verified on:
 - `shuffled()` - Return shuffled copy of container
 
 ### Container Operations (`container_kits.hpp`)
+
 - `contains()` - Check if container contains element
 - `contains_any()` - Check if container contains any of specified elements
 - `contains_if()` - Check if container contains element matching predicate
@@ -754,6 +802,7 @@ Tested and verified on:
 - `transform_all_to_vector()` - Transform container elements to vector
 
 ### Numerics Operations (`numerics_kits.hpp`)
+
 - `checked_add<T>()` - Safe addition with overflow detection
 - `checked_sub<T>()` - Safe subtraction with underflow detection
 - `checked_mul<T>()` - Safe multiplication with overflow detection
@@ -762,23 +811,36 @@ Tested and verified on:
 - `select_by_value_t<VALUE>` - Compile-time type selection by single value
 
 ### RAII Operations (`raii_kits.hpp`)
+
 - `generate_scope_guard()` - Create cleanup action that runs on scope exit
 - `generate_scope_guard_success()` - Cleanup only if no exception thrown
 - `generate_scope_guard_failed()` - Cleanup only if exception thrown
 - `ScopeGuard::dismiss()` - Prevent cleanup action from running
 
 ### String Conversion (`string_converts.hpp`)
+
 - `convert_range_to_string()` - Convert containers to string representation
 - `convert_to_bytes()` - Convert objects to byte spans
 - `convert_to_hex()` - Convert data to hexadecimal string
 - `try_convert_string_to_numerics<T>()` - Safe string to number conversion
 - `is_numeric()` - Check if string represents a number
 
+### DocxWriter (`docx_writer.hpp`)
+
+- `DocxWriter()` - Construct with default font (Calibri 11pt)
+- `add_line(text)` - Add a line of text to the document
+- `add_table(rows)` - Add a table (vector of vector of string)
+- `set_font(name)` - Set default font name
+- `set_font_size(pt)` - Set default font size in points
+- `save(path)` - Write the .docx file, returns `bool`
+
 ## ⚠️ Limitations & Workarounds
+
 - **std::optional for references**: For types that can't be stored in std::optional (e.g., references), functions that return optional currently return a copy. **Workaround**: Use pointers or `std::reference_wrapper` for reference semantics.
 - **C++20 modules**: Currently experimental. We'll add support once they're fully supported across major compilers. The library is header-only for now.
 
 ## 🚀 Future Plans
+
 - **C++26 Support**: Planning to leverage upcoming std::optional improvements and other C++26 features
 - **Extended Module Support**: Adding C++20 modules support as compiler support matures
 - **Performance Optimizations**: Continuous benchmarking and optimization based on real-world usage

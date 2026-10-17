@@ -19,6 +19,7 @@ add_executable(zuc_test
     test_common_concepts.cpp
     test_numerics_kits.cpp
     test_maths_kits.cpp
+    test_docx_output.cpp
 )
 enable_testing()
 target_compile_options(zuc_test PRIVATE
@@ -30,3 +31,4 @@ target_link_options(zuc_test PRIVATE
     $<$<CXX_COMPILER_ID:AppleClang>:-fprofile-instr-generate>
 )
 add_test(NAME zuc_test COMMAND zuc_test)
+

@@ -1,7 +1,11 @@
 # zuc (Zero-overhead Utility Collection) - Documentation
-## ⚠️Notice:
+
+## ⚠️Notice
+
 For functions equipped with range check(using `assert`), building under `release` mode will disable the check and cause **undefined behavior**.
+
 ## Table of Contents
+
 - [Overview](#overview)
 - [Installation](#installation)
 - [Module Documentation](#module-documentation)
@@ -13,6 +17,7 @@ For functions equipped with range check(using `assert`), building under `release
   - [Container Utilities](#container-utilities-container_kitshpp)
   - [Common Concepts](#common-concepts-common_conceptshpp)
   - [String Conversion](#string-conversion-string_convertshpp)
+  - [DocxWriter](#docxwriter-docx_writerhpp)
 - [API Reference](#api-reference)
 - [Examples](#examples)
 - [Requirements](#requirements)
@@ -31,11 +36,13 @@ zuc is a modern, header-only C++20 library that provides fast, intuitive utiliti
 ## Installation
 
 ### Quick Start
+
 1. Copy the `include/` directory to your project
 2. Include desired headers in your source files
 3. Use `namespace zuc;` for convenience
 
 ### Building Tests
+
 ```bash
 mkdir build && cd build
 cmake ..
@@ -50,6 +57,7 @@ cmake --build .
 String utilities provide zero-allocation operations using `std::string_view` for maximum performance.
 
 **Key Features:**
+
 - Zero-allocation substring operations
 - Efficient trimming with view-based variants
 - Flexible splitting and joining
@@ -174,6 +182,7 @@ bool matches = match_any(value, {"apple", "banana", "cherry"});  // true
 Span utilities provide safe, bounds-checked operations on `std::span`.
 
 **Key Features:**
+
 - Bounds-checked span slicing
 - Efficient span-to-vector conversion
 - Content searching and subspan finding
@@ -236,6 +245,7 @@ int fifth = concatenated[4];  // 5
 I/O operations provide safe, RAII-based file handling and convenient console I/O.
 
 **Key Features:**
+
 - RAII-based file management with automatic cleanup
 - Formatted console I/O with type safety
 - Efficient line-by-line file reading
@@ -309,6 +319,7 @@ file.reset_write_pointer_to_last();  // Reset to end
 Time utilities provide easy-to-use timing, date manipulation, and benchmarking.
 
 **Key Features:**
+
 - Simple timer and stopwatch utilities
 - DateTime class with arithmetic operations
 - Function benchmarking with detailed statistics
@@ -435,6 +446,7 @@ timer.reset(5.0);
 Random generation utilities provide convenient functions for generating random numbers.
 
 **Key Features:**
+
 - Basic random number generation (int, double, long long)
 - Sized integer generation (int32, int64)
 - Boolean random generation with probability control
@@ -515,6 +527,7 @@ auto shuffled_copy = shuffled(numbers);  // new vector with shuffled order
 Container utilities provide safe operations on standard containers.
 
 **Key Features:**
+
 - Content checking with predicates
 - Safe value extraction from containers
 - Convenient map operations
@@ -616,6 +629,7 @@ try {
 Common concepts provide type constraints for template programming.
 
 **Key Features:**
+
 - Stringable concept for string conversion
 - Type constraint concepts (OneOf, UnaryPred, BinaryPred)
 - Callable concepts with return type specification
@@ -674,6 +688,7 @@ void process_int_range(const R& range) {
 Numerics utilities provide compile-time type selection and overflow-checked arithmetic operations.
 
 **Key Features:**
+
 - Compile-time type selection for optimal memory usage
 - Overflow-checked arithmetic operations
 - Platform-specific optimizations using intrinsics
@@ -760,6 +775,7 @@ auto double_to_float = saturate_cast<float>(1e100);  // FLT_MAX
 RAII utilities provide scope guards for automatic resource management and cleanup.
 
 **Key Features:**
+
 - Automatic cleanup on scope exit
 - Success/failure conditional execution
 - Dismissable guards for flexible control
@@ -931,6 +947,78 @@ bool is_num2 = is_numeric("3.14");   // true
 bool is_num3 = is_numeric("hello");  // false
 ```
 
+### DocxWriter (`docx_writer.hpp`)
+
+DocxWriter generates `.docx` files (Office Open XML) using a store-only ZIP writer. No external dependencies.
+
+**Key Features:**
+
+- Store-only ZIP (compression method = 0)
+- CRC32 with reflected polynomial 0xEDB88320
+- Little-endian byte-by-byte integer writing (no `reinterpret_cast`)
+- Configurable default font and font size
+- Automatic XML escaping (`&`, `<`, `>`)
+- `xml:space="preserve"` for lines/cells with leading/trailing spaces
+- Table support with `add_table()` — bordered, auto-width
+- DOS date fixed to 2026-01-01 00:00:00
+
+#### Basic Usage
+
+```cpp
+#include "docx_writer.hpp"
+
+zuc::DocxWriter w;
+w.add_line("Hello, World!");
+w.add_line("Second line");
+w.save("output.docx");
+```
+
+#### Font and Size
+
+```cpp
+zuc::DocxWriter w;
+w.set_font("SimSun");    // default: "Calibri"
+w.set_font_size(14);     // default: 11 (points)
+w.add_line("你好世界");
+w.save("output.docx");
+```
+
+#### XML Escaping
+
+Special characters `&`, `<`, `>` are automatically escaped. Lines with leading or trailing spaces get `xml:space="preserve"`.
+
+```cpp
+zuc::DocxWriter w;
+w.add_line("a < b & c > d");  // becomes: a &lt; b &amp; c &gt; d
+w.add_line("  indented  ");     // gets xml:space="preserve"
+w.save("output.docx");
+```
+
+#### Miniz Backend
+
+Define `ZUC_USE_MINIZ` before including to use miniz instead of the built-in ZIP writer:
+
+```cpp
+#define ZUC_USE_MINIZ
+#include "docx_writer.hpp"
+```
+
+#### Table
+
+```cpp
+zuc::DocxWriter w;
+w.add_line("Report Title");
+w.add_table({
+    {"Name",  "Age", "City"},
+    {"Alice", "30",  "Beijing"},
+    {"Bob",   "25",  "Shanghai"},
+});
+w.add_line("End of report");
+w.save("report.docx");
+```
+
+Tables are rendered with single borders and auto column width. XML escaping and `xml:space="preserve"` apply to cell content the same way as `add_line()`.
+
 ## API Reference
 
 ### String Functions
@@ -1048,6 +1136,17 @@ bool is_num3 = is_numeric("hello");  // false
 | `convert_to_hex(data)`                   | Convert to hexadecimal string    | `std::string`           |
 | `try_convert_string_to_numerics<T>(str)` | Safe string to number conversion | `Optional<T>`           |
 | `is_numeric(str)`                        | Check if string is numeric       | `bool`                  |
+
+### DocxWriter Classes and Functions (`docx_writer.hpp`)
+
+| Method              | Description                      | Returns |
+| ------------------- | -------------------------------- | ------- |
+| `DocxWriter()`      | Construct with default font/size | —       |
+| `add_line(text)`    | Add a line of text               | `void`  |
+| `add_table(rows)`   | Add a table (vector of rows)     | `void`  |
+| `set_font(name)`    | Set default font name            | `void`  |
+| `set_font_size(pt)` | Set default font size in points  | `void`  |
+| `save(path)`        | Write .docx to file              | `bool`  |
 
 ## Examples
 
