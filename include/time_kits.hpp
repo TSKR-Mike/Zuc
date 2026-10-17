@@ -209,7 +209,7 @@ inline std::string get_today_str() {
     auto local_tp = zone->to_local(system_clock::now());
     return std::format("{:%Y-%m-%d}", local_tp);
 }
-#elif ZUC_DROP_TIMEZONE
+#elif
 inline std::string get_today_str() {
     // Get current utc's today string
     using namespace std::chrono;
@@ -226,7 +226,7 @@ inline std::string get_today_time_detailed_str() {
     auto local_tp = zone->to_local(system_clock::now());
     return std::format("{:%Y-%m-%d %H:%M:%S}", local_tp);
 }
-#elif ZUC_DROP_TIMEZONE
+#elif
 inline std::string get_today_time_detailed_str() {
     // Get current utc's today detailed time string
     using namespace std::chrono;
