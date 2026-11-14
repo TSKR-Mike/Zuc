@@ -106,6 +106,8 @@ if (val) use(*val);
 
 Tested on: GCC, Clang, MSVC (CI passes).
 
+![CI Status](CI.png)
+
 ## 🎯 Key Features
 
 - **Zero-Overhead Philosophy** - Designed for maximum performance with minimal runtime cost
@@ -208,7 +210,10 @@ Tested on: GCC, Clang, MSVC (CI passes).
 - **DOCX Generation** - Create `.docx` files with no external dependencies
 - **Store-only ZIP** - Built-in ZIP writer (compression method = 0)
 - **Configurable Font** - `set_font()`, `set_font_size()` for default document font
-- **Table Support** - `add_table()` for bordered tables with auto column width
+- **Table Support** - `add_table()` for bordered or borderless tables, auto column width
+- **Insertion Order** - `add_line()` and `add_table()` preserve call order in output
+- **Batch Lines** - `add_lines()` for adding multiple lines at once
+- **Content Control** - `clear_content()` and `set_table_border_enabled()`
 - **XML Escaping** - Automatic escaping of `&`, `<`, `>` in text content
 - **Miniz Backend** - Optional `ZUC_USE_MINIZ` to switch to miniz compression
 
@@ -250,39 +255,42 @@ cmake --build .
 **Notice** - You **DON'T** need to clone the CMake files for your own projects. They are included only for building and running the test suite. The CMake files contain personal development settings and are not required for using the library.
 
 ## ⚡ Performance Benchmarks
-
+> Notice: The benchmark result varied a lot under different running environments.
+> The benchmark result is only used for reference, not for actual performance.
 Zuc is designed with a zero‑overhead abstraction philosophy. The following benchmarks compare Zuc against Abseil (string operations) and standard iostream (file I/O) on a single test machine. Results are indicative, not prescriptive — actual performance will vary based on your environment and usage patterns.
 
 ### 🏆 Key Performance Highlights
 
-| Category        | Operation         | Performance        |
-| --------------- | ----------------- | ------------------ |
-| **vs Abseil**   | Split by Char     | **2.35× faster**   |
-| **vs Abseil**   | Split by String   | **1.24× faster**   |
-| **vs Abseil**   | Trim Right        | **1.37× faster**   |
-| **vs iostream** | Formatted Write   | **1.60× faster**   |
-| **vs iostream** | Medium File Write | **1.23× faster**   |
-| **vs iostream** | Large File Write  | **1.17× faster**   |
-| **Zero-alloc**  | View Operations   | **~100M+ ops/sec** |
+| Category        | Operation         | Performance         |
+| --------------- | ----------------- | ------------------- |
+| **vs Abseil**   | Split by Char     | **2.2–3.2× faster** |
+| **vs Abseil**   | Split by String   | **1.2–1.8× faster** |
+| **vs iostream** | Formatted Write   | **1.3–1.5× faster** |
+| **vs iostream** | Medium File Write | **1.1–1.2× faster** |
+| **vs iostream** | Medium File Read  | **1.0–1.1× faster** |
+| **vs iostream** | Large File Write  | **0.9–1.2× faster** |
+| **Zero-alloc**  | View Operations   | **~100M+ ops/sec**  |
 
 ### 📊 Detailed Results
 >
 > Summary: Overall, Zuc can achieve similar performance to abseil/iostream, with a nicer api without costing too much.
 
-![Performance Benchmarks](performance_benchmarks.png)
-
 #### File I/O Performance (zuc vs iostream)
 
-| Benchmark                              | zuc Time | iostream Time | Speedup   |
-| -------------------------------------- | -------- | ------------- | --------- |
-| Write Small File (100 iterations)      | 307.8 μs | 308.1 μs      | 1.00x     |
-| Write Medium File (10 iterations)      | 1.90 ms  | 2.34 ms       | **1.23x** |
-| Write Large File (5 iterations)        | 18.5 ms  | 21.6 ms       | **1.17x** |
-| Write Lines (100 iterations)           | 717.3 μs | 726.3 μs      | 1.01x     |
-| Write Formatted Lines (100 iterations) | 648.1 μs | 1039.0 μs     | **1.60x** |
-| Read Small File (100 iterations)       | 63.8 μs  | 62.2 μs       | 0.97x     |
-| Read Medium File (10 iterations)       | 5.39 ms  | 6.62 ms       | **1.23x** |
-| Read Lines (100 iterations)            | 662.9 μs | 644.1 μs      | 0.97x     |
+![I/O Comparison](chart_io_comparison.png)
+
+![I/O Ratio](chart_io_ratio.png)
+
+| Benchmark                              | Speedup (range) |
+| -------------------------------------- | --------------- |
+| Write Small File (100 iterations)      | 0.9–1.1×        |
+| Write Medium File (10 iterations)      | **1.1–1.2×**    |
+| Write Large File (5 iterations)        | 0.9–1.2×        |
+| Write Lines (100 iterations)           | 0.9–1.1×        |
+| Write Formatted Lines (100 iterations) | **1.3–1.5×**    |
+| Read Small File (100 iterations)       | 0.9–1.1×        |
+| Read Medium File (10 iterations)       | **1.0–1.1×**    |
+| Read Lines (100 iterations)            | 0.9–1.1×        |
 
 #### ⚡ I/O Performance: Wrapper Overhead Is Negligible
 
@@ -293,7 +301,7 @@ A common concern with RAII wrappers like `zuc::FileMgr` is whether they introduc
 
 ##### Key observations
 
-- **Bulk I/O throughput** is **statistically identical** (within 0.85× – 1.15×) between `zuc::FileMgr` and `std::fstream`.
+- **Bulk I/O throughput** is **statistically identical** (within 0.85× – 1.15×) between `zuc::FileMgr` and `std::fstream` for most operations.
   This confirms that the RAII wrapper does **not** add extra system calls, memory copies, or locking – the overhead is lost in measurement noise.
 
 - **Formatted line writing** (`write_a_line`) is **~1.5× faster** than `std::ostringstream` + `operator<<`.
@@ -301,45 +309,53 @@ A common concern with RAII wrappers like `zuc::FileMgr` is whether they introduc
 
 The following table shows one representative run on our test machine (Clang 22, `-O3`). The numbers are **illustrative**, not guaranteed; what matters is the **relative gap**, which consistently shows that zuc's I/O layer is as lightweight as the standard library, and sometimes faster where it counts.
 
-| Benchmark                             | zuc Time   | iostream Time                     | Speedup   |
-| ------------------------------------- | ---------- | --------------------------------- | --------- |
-| Write Small File (100 iters)          | 400 ns     | 380 ns                            | 0.95×     |
-| Write Medium File (10 iters)          | 2.01 ms    | 2.40 ms                           | 1.19×     |
-| Write Large File (5 iters)            | 16.5 ms    | 17.2 ms                           | 1.04×     |
-| Write Lines (100 iters)               | 825 µs     | 775 µs                            | 0.94×     |
-| **Write Formatted Lines (100 iters)** | **695 µs** | **1054 µs**(using `stringstream`) | **1.52×** |
-| Read Small File (100 iters)           | 86.8 µs    | 68.8 µs                           | 0.79×     |
-| Read Medium File (10 iters)           | 6.19 ms    | 7.87 ms                           | 1.27×     |
-| Read Lines (100 iters)                | 962 µs     | 983 µs                            | 1.02×     |
+| Benchmark                             | Speedup (range) |
+| ------------------------------------- | --------------- |
+| Write Small File (100 iters)          | 0.9–1.1×        |
+| Write Medium File (10 iters)          | **1.1–1.2×**    |
+| Write Large File (5 iters)            | 0.9–1.2×        |
+| Write Lines (100 iters)               | 0.9–1.1×        |
+| **Write Formatted Lines (100 iters)** | **1.3–1.5×**    |
+| Read Small File (100 iters)           | 0.9–1.1×        |
+| Read Medium File (10 iters)           | **1.0–1.1×**    |
+| Read Lines (100 iters)                | 0.9–1.1×        |
 
 **Bottom line**: `zuc::FileMgr` gives you safe, exception‑aware file handling **without paying a performance penalty**. The measured differences are within the noise floor of the file system and cache; the only clear win is in formatted output, where zuc's design is genuinely more efficient.
 
 #### String Operations (zuc vs Abseil)
+> I admit that Zuc is not as fast as Abseil for some uses, but it is still fast enough for most cases. And Zuc only got **~5000** lines of code.
+> Besides, I don't think the test result is accurate. My computer was doing hard word when I ran the test. The time can vary for 500 ns when I re-run the test.
 
-| Benchmark                        | zuc Time | Abseil Time | Speedup   |
-| -------------------------------- | -------- | ----------- | --------- |
-| Join Strings (100 iterations)    | 689 ns   | 602 ns      | 0.87x     |
-| Split by Char (100 iterations)   | 205 ns   | 482 ns      | **2.35x** |
-| Split by String (100 iterations) | 661 ns   | 817 ns      | **1.24x** |
-| Replace All (100 iterations)     | 737 ns   | 439 ns      | 0.60x     |
-| Trim (100 iterations)            | 61.9 ns  | 33.0 ns     | 0.53x     |
-| Trim Left (100 iterations)       | 49.3 ns  | 32.3 ns     | 0.66x     |
-| Trim Right (100 iterations)      | 47.6 ns  | 34.6 ns     | **1.37x** |
-| Contains (100 iterations)        | 11.8 ns  | 11.6 ns     | 1.02x     |
+![String Comparison](chart_str_comparison.png)
+
+![String Ratio](chart_str_ratio.png)
+
+| Benchmark                        | Speedup (range) |
+| -------------------------------- | --------------- |
+| Join Strings (100 iterations)    | 0.4–0.6×        |
+| Split by Char (100 iterations)   | **2.2–3.2×**    |
+| Split by String (100 iterations) | **1.2–1.8×**    |
+| Replace All (100 iterations)     | 0.7–0.8×        |
+| Trim (100 iterations)            | 0.4–0.7×        |
+| Trim Left (100 iterations)       | 0.6–0.7×        |
+| Trim Right (100 iterations)      | 0.6–0.7×        |
+| Contains (100 iterations)        | 0.5–0.9×        |
 
 #### zuc Internal Performance
 
-| Benchmark                        | Time    | Operations/Second |
-| -------------------------------- | ------- | ----------------- |
-| Remove All (100 iterations)      | 639 ns  | ~1.6M/s           |
-| Split to String (100 iterations) | 365 ns  | ~2.7M/s           |
-| Prefix (100 iterations)          | 2.50 ns | ~400M/s           |
-| Suffix (100 iterations)          | 2.70 ns | ~370M/s           |
-| String Slice (100 iterations)    | 2.60 ns | ~385M/s           |
-| Remove Prefix (100 iterations)   | 2.60 ns | ~385M/s           |
-| Remove Suffix (100 iterations)   | 3.20 ns | ~313M/s           |
-| Trim View (100 iterations)       | 11.9 ns | ~84M/s            |
-| Repeat (100 iterations)          | 141 ns  | ~7.1M/s           |
+![Zuc Only](chart_zuc_only.png)
+
+| Benchmark                        | Time (range) | Operations/Second |
+| -------------------------------- | ------------ | ----------------- |
+| Remove All (100 iterations)      | 650–680 ns   | ~1.5M/s           |
+| Split to String (100 iterations) | 420–680 ns   | ~1.5–2.4M/s       |
+| Prefix (100 iterations)          | 3–7 ns       | ~140–330M/s       |
+| Suffix (100 iterations)          | 3–7 ns       | ~140–330M/s       |
+| String Slice (100 iterations)    | 2–7 ns       | ~140–500M/s       |
+| Remove Prefix (100 iterations)   | 2–6 ns       | ~167–500M/s       |
+| Remove Suffix (100 iterations)   | 3–8 ns       | ~125–330M/s       |
+| Trim View (100 iterations)       | 14–17 ns     | ~59–71M/s         |
+| Repeat (100 iterations)          | 178–501 ns   | ~2–5.6M/s         |
 
 ### ⚠️ Benchmark Notes
 
@@ -678,6 +694,8 @@ The library includes comprehensive test coverage using the doctest framework:
 - **Span Operations** - Safe slicing, conversion, searching, concatenation
 - **Random Generation** - Various random number generators
 
+![Test Coverage](test_coverage.png)
+
 Run tests with:
 
 ```bash
@@ -828,10 +846,13 @@ Tested and verified on:
 ### DocxWriter (`docx_writer.hpp`)
 
 - `DocxWriter()` - Construct with default font (Calibri 11pt)
-- `add_line(text)` - Add a line of text to the document
-- `add_table(rows)` - Add a table (vector of vector of string)
+- `add_line(text)` - Add a line of text (accepts `Stringable` types)
+- `add_lines(container)` - Add multiple lines at once
+- `add_table(rows)` - Add a table. The outer container and each row must be `RangeLike`, and each cell must be `Stringable`. Also accepts brace-init lists, e.g. `add_table({{"a", "b"}, {"c", "d"}})`
 - `set_font(name)` - Set default font name
 - `set_font_size(pt)` - Set default font size in points
+- `set_table_border_enabled(b)` - Enable/disable table borders
+- `clear_content()` - Remove all lines and tables
 - `save(path)` - Write the .docx file, returns `bool`
 
 ## ⚠️ Limitations & Workarounds

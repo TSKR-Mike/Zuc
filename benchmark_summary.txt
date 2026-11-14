@@ -1,0 +1,40 @@
+======================================================================
+  ZUC Benchmark Summary (100 iterations)
+======================================================================
+
+--- IO Benchmarks: zuc vs iostream ---
+Benchmark                          zuc     iostream    Ratio
+------------------------------------------------------------
+WriteSmallFile               537.46 us    509.88 us    1.05x
+WriteMediumFile                2.98 ms      3.55 ms    0.84x
+WriteLargeFile                35.16 ms     32.21 ms    1.09x
+WriteLines                   993.22 us    952.57 us    1.04x
+WriteFormattedLines          930.93 us      1.24 ms    0.75x
+ReadSmallFile                 80.51 us     79.90 us    1.01x
+ReadMediumFile                 5.96 ms      6.57 ms    0.91x
+ReadLines                    691.44 us    706.28 us    0.98x
+
+--- String Benchmarks: zuc vs absl ---
+Benchmark                          zuc         absl    Ratio
+------------------------------------------------------------
+JoinStrings                  691.00 ns    406.00 ns    1.70x
+SplitByChar                  281.00 ns    891.00 ns    0.32x
+SplitByString                770.00 ns    947.00 ns    0.81x
+ReplaceAll                   751.00 ns    532.00 ns    1.41x
+Trim                          66.00 ns     35.00 ns    1.89x
+TrimLeft                      47.00 ns     33.00 ns    1.42x
+TrimRight                     45.00 ns     33.00 ns    1.36x
+Contains                      12.00 ns     11.00 ns    1.09x
+
+--- Zuc-only String Benchmarks ---
+Benchmark                          zuc
+----------------------------------------
+RemoveAll                    673.00 ns
+SplitToString                434.00 ns
+Prefix                         3.00 ns
+Suffix                         3.00 ns
+StringSlice                    2.00 ns
+RemovePrefix                   2.00 ns
+RemoveSuffix                   3.00 ns
+TrimView                      14.00 ns
+Repeat                       181.00 ns

@@ -1,0 +1,96 @@
+(base) (base) PS D:\MyProjects\C++Project\zuc_test\build> ."D:/MyProjects/C++Project/zuc_test/build/zuc_test.exe"
+2026-10-17T22:34:46+08:00
+Running D:\MyProjects\C++Project\zuc_test\build\zuc_test.exe
+Run on (22 X 3072 MHz CPU s)
+CPU Caches:
+  L1 Data 48 KiB (x11)
+  L1 Instruction 64 KiB (x11)
+  L2 Unified 2048 KiB (x11)
+  L3 Unified 24576 KiB (x1)
+-----------------------------------------------------------------------------------------------------------
+Benchmark                                                 Time             CPU   Iterations UserCounters...
+-----------------------------------------------------------------------------------------------------------
+BM_Zuc_WriteSmallFile/iterations:100                 479473 ns       468750 ns          100 items_per_second=2.13333k/s
+BM_iostream_write_small_file/iterations:100          441178 ns       312500 ns          100 items_per_second=3.2k/s
+BM_Zuc_WriteMediumFile/iterations:10                2457250 ns      1562500 ns           10 items_per_second=640/s
+BM_iostream_write_medium_file/iterations:10         2754840 ns      1562500 ns           10 items_per_second=640/s
+BM_Zuc_WriteLargeFile/iterations:5                 17749960 ns     18750000 ns            5 items_per_second=53.3333/s
+BM_iostream_write_large_file/iterations:5          20269780 ns     15625000 ns            5 items_per_second=64/s
+BM_Zuc_WriteLines/iterations:100                     832137 ns       781250 ns          100 items_per_second=1.28M/s
+BM_iostream_write_lines/iterations:100               731910 ns       625000 ns          100 items_per_second=1.6M/s
+BM_Zuc_WriteFormattedLines/iterations:100            682331 ns       625000 ns          100 items_per_second=1.6M/s
+BM_iostream_write_formatted_lines/iterations:100    1013058 ns      1093750 ns          100 items_per_second=914.286k/s
+BM_Zuc_ReadSmallFile/iterations:100                   70799 ns        0.000 ns          100 items_per_second=inf/s
+BM_iostream_read_small_file/iterations:100            71952 ns       156250 ns          100 items_per_second=6.4k/s
+BM_Zuc_ReadMediumFile/iterations:10                 6203290 ns      6250000 ns           10 items_per_second=160/s
+BM_iostream_read_medium_file/iterations:10          7436320 ns      7812500 ns           10 items_per_second=128/s
+BM_Zuc_ReadLines/iterations:100                      697099 ns       781250 ns          100 items_per_second=1.28k/s
+BM_iostream_read_lines/iterations:100                684835 ns       625000 ns          100 items_per_second=1.6k/s
+BM_Zuc_JoinStrings/iterations:100                       901 ns        0.000 ns          100 items_per_second=inf/s
+BM_Absl_JoinStrings/iterations:100                      413 ns        0.000 ns          100 items_per_second=inf/s
+BM_Zuc_SplitStringByChar/iterations:100                 403 ns        0.000 ns          100 items_per_second=inf/s
+BM_Absl_SplitStringByChar/iterations:100                833 ns        0.000 ns          100 items_per_second=inf/s
+BM_Zuc_SplitStringByString/iterations:100               798 ns        0.000 ns          100 items_per_second=inf/s
+BM_Absl_SplitStringByString/iterations:100             1072 ns        0.000 ns          100 items_per_second=inf/s
+BM_Zuc_ReplaceAll/iterations:100                        781 ns        0.000 ns          100 items_per_second=inf/s
+BM_Absl_ReplaceAll/iterations:100                       579 ns        0.000 ns          100 items_per_second=inf/s
+BM_Zuc_Trim/iterations:100                             78.0 ns        0.000 ns          100 items_per_second=inf/s
+BM_Absl_Trim/iterations:100                            38.0 ns        0.000 ns          100 items_per_second=inf/s
+BM_Zuc_TrimLeft/iterations:100                         54.0 ns        0.000 ns          100 items_per_second=inf/s
+BM_Absl_TrimLeft/iterations:100                        37.0 ns        0.000 ns          100 items_per_second=inf/s
+BM_Zuc_TrimRight/iterations:100                        53.0 ns        0.000 ns          100 items_per_second=inf/s
+BM_Absl_TrimRight/iterations:100                       33.0 ns        0.000 ns          100 items_per_second=inf/s
+BM_Zuc_Contains/iterations:100                         24.0 ns        0.000 ns          100 items_per_second=inf/s
+BM_Absl_Contains/iterations:100                        18.0 ns        0.000 ns          100 items_per_second=inf/s
+BM_Zuc_RemoveAll/iterations:100                         654 ns        0.000 ns          100 items_per_second=inf/s
+BM_Zuc_SplitToString/iterations:100                     423 ns        0.000 ns          100 items_per_second=inf/s
+BM_Zuc_Prefix/iterations:100                           7.00 ns        0.000 ns          100 items_per_second=inf/s
+BM_Zuc_Suffix/iterations:100                           7.00 ns        0.000 ns          100 items_per_second=inf/s
+BM_Zuc_StringSlice/iterations:100                      6.00 ns        0.000 ns          100 items_per_second=inf/s
+BM_Zuc_RemovePrefix/iterations:100                     6.00 ns        0.000 ns          100 items_per_second=inf/s
+BM_Zuc_RemoveSuffix/iterations:100                     5.00 ns        0.000 ns          100 items_per_second=inf/s
+BM_Zuc_TrimView/iterations:100                         14.0 ns        0.000 ns          100 items_per_second=inf/s
+BM_Zuc_Repeat/iterations:100                            178 ns        0.000 ns          100 items_per_second=inf/s
+
+Second Run:
+BM_Zuc_WriteSmallFile/iterations:100                 386813 ns       312500 ns          100 items_per_second=3.2k/s
+BM_iostream_write_small_file/iterations:100          356215 ns       468750 ns          100 items_per_second=2.13333k/s
+BM_Zuc_WriteMediumFile/iterations:10                2253310 ns      1562500 ns           10 items_per_second=640/s
+BM_iostream_write_medium_file/iterations:10         2691420 ns      3125000 ns           10 items_per_second=320/s
+BM_Zuc_WriteLargeFile/iterations:5                 18929400 ns     18750000 ns            5 items_per_second=53.3333/s
+BM_iostream_write_large_file/iterations:5          22184760 ns     21875000 ns            5 items_per_second=45.7143/s
+BM_Zuc_WriteLines/iterations:100                     796376 ns       781250 ns          100 items_per_second=1.28M/s
+BM_iostream_write_lines/iterations:100               771228 ns       781250 ns          100 items_per_second=1.28M/s
+BM_Zuc_WriteFormattedLines/iterations:100            694643 ns       625000 ns          100 items_per_second=1.6M/s
+BM_iostream_write_formatted_lines/iterations:100    1000489 ns      1093750 ns          100 items_per_second=914.286k/s
+BM_Zuc_ReadSmallFile/iterations:100                   64121 ns        0.000 ns          100 items_per_second=inf/s
+BM_iostream_read_small_file/iterations:100            75723 ns       156250 ns          100 items_per_second=6.4k/s
+BM_Zuc_ReadMediumFile/iterations:10                 8321900 ns      7812500 ns           10 items_per_second=128/s
+BM_iostream_read_medium_file/iterations:10          7026450 ns      7812500 ns           10 items_per_second=128/s
+BM_Zuc_ReadLines/iterations:100                      759891 ns       781250 ns          100 items_per_second=1.28k/s
+BM_iostream_read_lines/iterations:100                725559 ns       781250 ns          100 items_per_second=1.28k/s
+BM_Zuc_JoinStrings/iterations:100                      1441 ns        0.000 ns          100 items_per_second=inf/s
+BM_Absl_JoinStrings/iterations:100                      422 ns        0.000 ns          100 items_per_second=inf/s
+BM_Zuc_SplitStringByChar/iterations:100                 366 ns        0.000 ns          100 items_per_second=inf/s
+BM_Absl_SplitStringByChar/iterations:100                851 ns        0.000 ns          100 items_per_second=inf/s
+BM_Zuc_SplitStringByString/iterations:100               778 ns        0.000 ns          100 items_per_second=inf/s
+BM_Absl_SplitStringByString/iterations:100             1427 ns        0.000 ns          100 items_per_second=inf/s
+BM_Zuc_ReplaceAll/iterations:100                        782 ns        0.000 ns          100 items_per_second=inf/s
+BM_Absl_ReplaceAll/iterations:100                       599 ns        0.000 ns          100 items_per_second=inf/s
+BM_Zuc_Trim/iterations:100                             82.0 ns        0.000 ns          100 items_per_second=inf/s
+BM_Absl_Trim/iterations:100                            47.0 ns        0.000 ns          100 items_per_second=inf/s
+BM_Zuc_TrimLeft/iterations:100                         56.0 ns        0.000 ns          100 items_per_second=inf/s
+BM_Absl_TrimLeft/iterations:100                        38.0 ns        0.000 ns          100 items_per_second=inf/s
+BM_Zuc_TrimRight/iterations:100                        52.0 ns        0.000 ns          100 items_per_second=inf/s
+BM_Absl_TrimRight/iterations:100                       37.0 ns        0.000 ns          100 items_per_second=inf/s
+BM_Zuc_Contains/iterations:100                         21.0 ns        0.000 ns          100 items_per_second=inf/s
+BM_Absl_Contains/iterations:100                        16.0 ns        0.000 ns          100 items_per_second=inf/s
+BM_Zuc_RemoveAll/iterations:100                         665 ns        0.000 ns          100 items_per_second=inf/s
+BM_Zuc_SplitToString/iterations:100                     673 ns        0.000 ns          100 items_per_second=inf/s
+BM_Zuc_Prefix/iterations:100                           6.00 ns        0.000 ns          100 items_per_second=inf/s
+BM_Zuc_Suffix/iterations:100                           5.00 ns        0.000 ns          100 items_per_second=inf/s
+BM_Zuc_StringSlice/iterations:100                      7.00 ns        0.000 ns          100 items_per_second=inf/s
+BM_Zuc_RemovePrefix/iterations:100                     5.00 ns        0.000 ns          100 items_per_second=inf/s
+BM_Zuc_RemoveSuffix/iterations:100                     8.00 ns        0.000 ns          100 items_per_second=inf/s
+BM_Zuc_TrimView/iterations:100                         17.0 ns        0.000 ns          100 items_per_second=inf/s
+BM_Zuc_Repeat/iterations:100                            501 ns        0.000 ns          100 items_per_second=inf/s

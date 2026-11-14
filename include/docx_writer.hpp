@@ -1,9 +1,14 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <cstdio>
+#include <initializer_list>
 #include <string>
 #include <vector>
+
+#include "common_concepts.hpp"
+#include "string_kits.hpp"
 
 #ifdef ZUC_USE_MINIZ
 #include "miniz.h"
@@ -26,7 +31,7 @@ inline bool zip_end(mz_zip_archive& zip) {
            mz_zip_writer_end(&zip) != 0;
 }
 #else
-
+// TODO: preserve content order
 struct ZipEntry {
     std::string name;
     uint32_t crc32;
@@ -220,22 +225,63 @@ inline bool zip_end(ZipWriter& writer) {
 
 class DocxWriter {
    public:
-    void add_line(std::string text) { lines_.push_back(std::move(text)); }
+    template <typename T>
+        requires Stringable<T>
+    void add_line(const T& text) {
+        lines_.push_back({global_c, convert_stringable_to_string(text)});
+        ++global_c;
+    }
 
-    void add_table(std::vector<std::vector<std::string>> rows) {
-        tables_.push_back(std::move(rows));
+    template <typename T, typename V = get_rangelike_value_type<T>,
+              typename U = get_rangelike_value_type<V>>
+        requires RangeLike<T> && RangeLike<V> && Stringable<U>
+    void add_table(T rows) {
+        std::vector<std::string> temp;
+        std::vector<std::vector<std::string>> curr_table;
+        for (auto const& lines_per_row : rows) {
+            temp.clear();
+            for (auto const& each_element : lines_per_row) {
+                temp.push_back(convert_stringable_to_string(each_element));
+            }
+            curr_table.push_back(temp);
+        }
+        tables_.push_back({global_c, curr_table});
+        ++global_c;
+    }
+
+    void add_table(
+        std::initializer_list<std::initializer_list<std::string>> rows) {
+        add_table<std::initializer_list<std::initializer_list<std::string>>>(
+            rows);
+    }
+
+    template <typename T>
+        requires RangeLikeElemTypeConvertibleTo<T, std::string>
+    void add_lines(const T& c) {
+        for (auto const& curr_line : c) {
+            lines_.push_back(
+                {global_c, convert_stringable_to_string(curr_line)});
+            ++global_c;
+        }
     }
 
     void set_font(std::string name) { font_name_ = std::move(name); }
     void set_font_size(int pt) { font_size_pt_ = pt; }
+    void set_table_border_enabled(bool enabled) {
+        show_table_border_ = enabled;
+    }
+    void clear_content() {
+        tables_.clear();
+        lines_.clear();
+    }
 
-    bool save(const char* path) const {
+    bool save(const std::string& path) const {
 #ifdef ZUC_USE_MINIZ
         mz_zip_archive zip{};
 #else
         detail::ZipWriter zip{};
 #endif
-        if (!detail::zip_begin(zip, path)) return false;
+        if (!detail::zip_begin(zip, path.c_str())) return false;
 
         auto add = [&](const char* name, const std::string& s) {
             return detail::zip_add_file(zip, name, s.data(), s.size());
@@ -250,10 +296,13 @@ class DocxWriter {
     }
 
    private:
-    std::vector<std::string> lines_;
-    std::vector<std::vector<std::vector<std::string>>> tables_;
+    std::vector<std::pair<size_t, std::string>> lines_;
+    std::vector<std::pair<size_t, std::vector<std::vector<std::string>>>>
+        tables_;
     std::string font_name_ = "Calibri";
     int font_size_pt_ = 11;
+    size_t global_c = 0;
+    bool show_table_border_ = true;
 
     static std::string xml_escape(std::string_view s) {
         std::string r;
@@ -335,7 +384,7 @@ class DocxWriter {
                "</w:styles>";
     }
 
-    static constexpr auto TBL_BORDERS =
+    static constexpr auto TBL_BORDERS_VISIBLE =
         "<w:tblBorders>"
         "<w:top w:val=\"single\" w:sz=\"4\" w:space=\"0\" w:color=\"auto\"/>"
         "<w:left w:val=\"single\" w:sz=\"4\" w:space=\"0\" w:color=\"auto\"/>"
@@ -347,6 +396,49 @@ class DocxWriter {
         "w:color=\"auto\"/>"
         "</w:tblBorders>";
 
+    static constexpr auto TBL_BORDERS_HIDDEN =
+        "<w:tblBorders>"
+        "<w:top w:val=\"none\" w:sz=\"0\" w:space=\"0\" w:color=\"auto\"/>"
+        "<w:left w:val=\"none\" w:sz=\"0\" w:space=\"0\" w:color=\"auto\"/>"
+        "<w:bottom w:val=\"none\" w:sz=\"0\" w:space=\"0\" w:color=\"auto\"/>"
+        "<w:right w:val=\"none\" w:sz=\"0\" w:space=\"0\" w:color=\"auto\"/>"
+        "<w:insideH w:val=\"none\" w:sz=\"0\" w:space=\"0\" "
+        "w:color=\"auto\"/>"
+        "<w:insideV w:val=\"none\" w:sz=\"0\" w:space=\"0\" "
+        "w:color=\"auto\"/>"
+        "</w:tblBorders>";
+
+    void gen_line_xml(const std::string& line, std::string& doc) const {
+        doc.append("<w:p><w:r><w:t");
+        if (!line.empty() && (line.front() == ' ' || line.back() == ' '))
+            doc.append(" xml:space=\"preserve\"");
+        doc.push_back('>');
+        doc.append(xml_escape(line));
+        doc.append("</w:t></w:r></w:p>\n");
+    }
+    void gen_table_xml(const std::vector<std::vector<std::string>>& table,
+                       std::string& doc) const {
+        const auto& borders_xml =
+            show_table_border_ ? TBL_BORDERS_VISIBLE : TBL_BORDERS_HIDDEN;
+        doc.append("<w:tbl><w:tblPr><w:tblW w:w=\"0\" w:type=\"auto\"/>");
+        doc.append(borders_xml);
+        doc.append("</w:tblPr>");
+        for (const auto& row : table) {
+            doc.append("<w:tr>");
+            for (const auto& cell : row) {
+                doc.append("<w:tc><w:p><w:r><w:t");
+                if (!cell.empty() &&
+                    (cell.front() == ' ' || cell.back() == ' '))
+                    doc.append(" xml:space=\"preserve\"");
+                doc.push_back('>');
+                doc.append(xml_escape(cell));
+                doc.append("</w:t></w:r></w:p></w:tc>");
+            }
+            doc.append("</w:tr>");
+        }
+        doc.append("</w:tbl>\n");
+    }
+
     std::string build_document() const {
         std::string doc =
             "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
@@ -354,33 +446,32 @@ class DocxWriter {
             "xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/"
             "main\">\n"
             "<w:body>\n";
-        for (const auto& line : lines_) {
-            doc.append("<w:p><w:r><w:t");
-            if (!line.empty() && (line.front() == ' ' || line.back() == ' '))
-                doc.append(" xml:space=\"preserve\"");
-            doc.push_back('>');
-            doc.append(xml_escape(line));
-            doc.append("</w:t></w:r></w:p>\n");
-        }
-        for (const auto& table : tables_) {
-            doc.append("<w:tbl><w:tblPr><w:tblW w:w=\"0\" w:type=\"auto\"/>");
-            doc.append(TBL_BORDERS);
-            doc.append("</w:tblPr>");
-            for (const auto& row : table) {
-                doc.append("<w:tr>");
-                for (const auto& cell : row) {
-                    doc.append("<w:tc><w:p><w:r><w:t");
-                    if (!cell.empty() &&
-                        (cell.front() == ' ' || cell.back() == ' '))
-                        doc.append(" xml:space=\"preserve\"");
-                    doc.push_back('>');
-                    doc.append(xml_escape(cell));
-                    doc.append("</w:t></w:r></w:p></w:tc>");
-                }
-                doc.append("</w:tr>");
+        auto it_line = lines_.cbegin();
+        auto it_table = tables_.cbegin();
+
+        while (it_line != lines_.cend() || it_table != tables_.cend()) {
+            if (it_line == lines_.cend()) {
+                gen_table_xml((*it_table).second, doc);
+                ++it_table;
+                continue;
             }
-            doc.append("</w:tbl>\n");
+            if (it_table == tables_.cend()) {
+                gen_line_xml((*it_line).second, doc);
+                ++it_line;
+                continue;
+            }
+
+            if (it_line->first > it_table->first) {
+                gen_table_xml((*it_table).second, doc);
+                ++it_table;
+                continue;
+            } else {
+                gen_line_xml((*it_line).second, doc);
+                ++it_line;
+                continue;
+            }
         }
+
         doc.append("</w:body>\n</w:document>");
         return doc;
     }

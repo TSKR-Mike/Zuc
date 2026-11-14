@@ -1,5 +1,6 @@
 #include <filesystem>
 #include <string>
+#include <vector>
 
 #include "doctest.h"
 #include "include/docx_writer.hpp"
@@ -183,6 +184,8 @@ TEST_SUITE("DocxWriter") {
             {"  leading", "trailing  "},
             {"  both  ", "no spaces"},
         });
+        std::vector<std::vector<int>> a{{1, 2}, {3, 4}};
+        w.add_table(a);
         CHECK(w.save(out));
         CHECK(fs::exists(out));
 

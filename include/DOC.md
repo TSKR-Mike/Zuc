@@ -959,7 +959,9 @@ DocxWriter generates `.docx` files (Office Open XML) using a store-only ZIP writ
 - Configurable default font and font size
 - Automatic XML escaping (`&`, `<`, `>`)
 - `xml:space="preserve"` for lines/cells with leading/trailing spaces
-- Table support with `add_table()` — bordered, auto-width
+- Table support with `add_table()` — bordered or borderless, auto-width
+- `add_table()` and `add_line()` preserve insertion order
+- Template-based `add_line()`, `add_table()`, `add_lines()` — accepts `Stringable` and `RangeLike` types
 - DOS date fixed to 2026-01-01 00:00:00
 
 #### Basic Usage
@@ -971,6 +973,14 @@ zuc::DocxWriter w;
 w.add_line("Hello, World!");
 w.add_line("Second line");
 w.save("output.docx");
+```
+
+#### Batch Lines
+
+```cpp
+zuc::DocxWriter w;
+w.add_lines(std::vector{"Line 1", "Line 2", "Line 3"});
+w.save("batch.docx");
 ```
 
 #### Font and Size
@@ -1018,6 +1028,27 @@ w.save("report.docx");
 ```
 
 Tables are rendered with single borders and auto column width. XML escaping and `xml:space="preserve"` apply to cell content the same way as `add_line()`.
+
+`add_line()` and `add_table()` preserve insertion order — lines and tables appear in the document in the order they were added.
+
+#### Borderless Table
+
+```cpp
+zuc::DocxWriter w;
+w.set_table_border_enabled(false);
+w.add_table({{"A", "B"}, {"C", "D"}});
+w.save("no_border.docx");
+```
+
+#### Clear Content
+
+```cpp
+zuc::DocxWriter w;
+w.add_line("Draft");
+w.clear_content();  // remove all lines and tables
+w.add_line("Final version");
+w.save("final.docx");
+```
 
 ## API Reference
 
@@ -1139,14 +1170,17 @@ Tables are rendered with single borders and auto column width. XML escaping and 
 
 ### DocxWriter Classes and Functions (`docx_writer.hpp`)
 
-| Method              | Description                      | Returns |
-| ------------------- | -------------------------------- | ------- |
-| `DocxWriter()`      | Construct with default font/size | —       |
-| `add_line(text)`    | Add a line of text               | `void`  |
-| `add_table(rows)`   | Add a table (vector of rows)     | `void`  |
-| `set_font(name)`    | Set default font name            | `void`  |
-| `set_font_size(pt)` | Set default font size in points  | `void`  |
-| `save(path)`        | Write .docx to file              | `bool`  |
+| Method                        | Description                                              | Returns |
+| ----------------------------- | -------------------------------------------------------- | ------- |
+| `DocxWriter()`                | Construct with default font/size                         | —       |
+| `add_line(text)`              | Add a line (accepts `Stringable` types)                  | `void`  |
+| `add_lines(container)`        | Add multiple lines (accepts `RangeLike` of `Stringable`) | `void`  |
+| `add_table(rows)`             | Add a table (accepts `RangeLike` of `RangeLike`)         | `void`  |
+| `set_font(name)`              | Set default font name                                    | `void`  |
+| `set_font_size(pt)`           | Set default font size in points                          | `void`  |
+| `set_table_border_enabled(b)` | Enable/disable table borders                             | `void`  |
+| `clear_content()`             | Remove all lines and tables                              | `void`  |
+| `save(path)`                  | Write .docx to file                                      | `bool`  |
 
 ## Examples
 

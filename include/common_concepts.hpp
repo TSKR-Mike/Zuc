@@ -130,6 +130,18 @@ concept RangeLike = requires(T& t) {
     std::end(t);
 };
 
+template <typename From, typename To>
+concept CastableTo = requires(From&& from) {
+    { static_cast<To>(std::forward<From>(from)) };
+};
+
+template <typename From, typename To>
+    requires CastableTo<From, To>
+constexpr decltype(auto) optimal_cast(From&& from) noexcept(
+    noexcept(static_cast<To>(std::forward<From>(from)))) {
+    return static_cast<To>(std::forward<From>(from));
+}
+
 template <typename T, typename ValueType>
 concept RangeLikeElemTypeSpecified = requires(T& t) {
     requires RangeLike<T>;
@@ -141,7 +153,7 @@ concept RangeLikeElemTypeSpecified = requires(T& t) {
 template <typename T, typename ValueType>
 concept RangeLikeElemTypeConvertibleTo = requires(T& t) {
     requires RangeLike<T>;
-    requires std::convertible_to<
+    requires CastableTo<
         typename std::iterator_traits<decltype(std::begin(t))>::value_type,
         ValueType>;
 };
@@ -230,17 +242,5 @@ concept Insertable =
 
 template <typename T>
 concept NumericType = std::integral<T> || std::floating_point<T>;
-
-template <typename From, typename To>
-concept CastableTo = requires(From&& from) {
-    { static_cast<To>(std::forward<From>(from)) };
-};
-
-template <typename From, typename To>
-    requires CastableTo<From, To>
-constexpr decltype(auto) optimal_cast(From&& from) noexcept(
-    noexcept(static_cast<To>(std::forward<From>(from)))) {
-    return static_cast<To>(std::forward<From>(from));
-}
 
 }  // namespace zuc
